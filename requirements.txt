@@ -7,4 +7,6 @@ torch>=2.2
 jupyter>=1.0
 seaborn>=0.13.0
 prophet>=1.1
+neuralprophet>=0.11
 ipykernel>=6.29
+plotly>=5.15
