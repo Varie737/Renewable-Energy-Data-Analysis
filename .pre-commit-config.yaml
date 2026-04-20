@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: fix-notebook-widgets
+        name: Fix notebook widget metadata
+        entry: python scripts/fix_notebook_widgets.py
+        language: system
+        files: \.ipynb$
