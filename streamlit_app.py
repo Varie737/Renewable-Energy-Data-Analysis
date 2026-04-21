@@ -322,57 +322,161 @@ def main():
     raw_data = load_data()
     dataframe = process_data(raw_data)
 
-    # Sidebar controls: date range and deviation
-    st.sidebar.header("Filters")
-    min_date = dataframe["utc_timestamp"].dt.date.min()
-    max_date = dataframe["utc_timestamp"].dt.date.max()
-    date_range = st.sidebar.date_input("Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
-    if isinstance(date_range, tuple) and len(date_range) == 2:
-        start_date, end_date = date_range
-    else:
-        start_date = date_range
-        end_date = date_range
+    # Sidebar controls: comprehensive interactive filters
+    st.sidebar.header("📊 Filters & Controls")
+    
+    # ===== Date & Time Filters =====
+    with st.sidebar.expander("📅 Date & Time", expanded=True):
+        min_date = dataframe["utc_timestamp"].dt.date.min()
+        max_date = dataframe["utc_timestamp"].dt.date.max()
+        date_range = st.date_input("Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+        else:
+            start_date = date_range
+            end_date = date_range
+        
+        # Hour of day filter
+        hour_range = st.slider("Hour of day", min_value=0, max_value=23, value=(0, 23), step=1)
+        
+        # Day of week filter
+        days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        selected_days = st.multiselect("Days of week", days_of_week, default=days_of_week)
+        selected_day_nums = [days_of_week.index(day) for day in selected_days]
+        
+        # Month filter
+        months = ["January", "February", "March", "April", "May", "June", 
+                  "July", "August", "September", "October", "November", "December"]
+        selected_months = st.multiselect("Months", months, default=months)
+        selected_month_nums = [months.index(m) + 1 for m in selected_months]
+    
+    # ===== Generation & Demand Filters =====
+    with st.sidebar.expander("⚡ Generation & Demand", expanded=True):
+        solar_min = float(dataframe["solar"].min())
+        solar_max = float(dataframe["solar"].max())
+        solar_range = st.slider("Solar generation (MW)", min_value=solar_min, max_value=solar_max, 
+                                value=(solar_min, solar_max), step=100.0)
+        
+        wind_min = float(dataframe["wind"].min())
+        wind_max = float(dataframe["wind"].max())
+        wind_range = st.slider("Wind generation (MW)", min_value=wind_min, max_value=wind_max, 
+                               value=(wind_min, wind_max), step=100.0)
+        
+        demand_min = float(dataframe["demand"].min())
+        demand_max = float(dataframe["demand"].max())
+        demand_range = st.slider("Demand (MW)", min_value=demand_min, max_value=demand_max, 
+                                 value=(demand_min, demand_max), step=100.0)
+    
+    # ===== Shortfall Filters =====
+    with st.sidebar.expander("📉 Shortfall Analysis", expanded=True):
+        shortfall_min = float(dataframe["shortfall"].min())
+        shortfall_max = float(dataframe["shortfall"].max())
+        shortfall_range = st.slider("Shortfall (MW)", min_value=shortfall_min, max_value=shortfall_max, 
+                                    value=(shortfall_min, shortfall_max), step=100.0)
+        
+        # Filter for periods with shortfall
+        show_only_shortfall = st.checkbox("Show only periods with shortfall", value=False)
+    
+    # ===== Deviation Filters =====
+    with st.sidebar.expander("📊 Deviation from Mean", expanded=False):
+        metric_options = {
+            "Generation (solar+wind)": "dev_generation",
+            "Solar": "dev_solar",
+            "Wind": "dev_wind",
+            "Demand": "dev_demand",
+        }
+        metric_label = st.selectbox("Deviation metric", list(metric_options.keys()))
+        deviation_column = metric_options[metric_label]
+        
+        full_deviation_minimum = float(dataframe[deviation_column].min())
+        full_deviation_maximum = float(dataframe[deviation_column].max())
+        deviation_range = st.slider(
+            label="Allowed deviation range",
+            min_value=float(full_deviation_minimum),
+            max_value=float(full_deviation_maximum),
+            value=(float(full_deviation_minimum), float(full_deviation_maximum)),
+            step=0.01,
+        )
 
-    # deviation metric selection
-    metric_options = {
-        "Generation (solar+wind)": "dev_generation",
-        "Solar": "dev_solar",
-        "Wind": "dev_wind",
-        "Demand": "dev_demand",
-    }
-    metric_label = st.sidebar.selectbox("Deviation metric (choose which series to filter)", list(metric_options.keys()))
-    deviation_column = metric_options[metric_label]
-
-    # dynamic slider bounds from full data
-    full_deviation_minimum = float(dataframe[deviation_column].min())
-    full_deviation_maximum = float(dataframe[deviation_column].max())
-    # slider with full range
-    deviation_range = st.sidebar.slider(
-        label="Allowed deviation range (value - mean) / mean",
-        min_value=float(full_deviation_minimum),
-        max_value=float(full_deviation_maximum),
-        value=(float(full_deviation_minimum), float(full_deviation_maximum)),
-        step=0.01,
-    )
-
-    # Convert selected dates to timestamps (include entire day for end_date)
+    # Apply all filters to the dataframe
+    filtered_dataframe = dataframe.copy()
+    
+    # Date range filter
     start_timestamp = pd.Timestamp(start_date).tz_localize("UTC")
     end_timestamp = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
     end_timestamp = end_timestamp.tz_localize("UTC") if end_timestamp.tzinfo is None else end_timestamp
-
-    # Filter data
-    filtered_dataframe = filter_by_date_and_deviation(dataframe, start_timestamp, end_timestamp, deviation_column, deviation_range[0], deviation_range[1])
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["utc_timestamp"] >= start_timestamp) & 
+        (filtered_dataframe["utc_timestamp"] <= end_timestamp)
+    ]
+    
+    # Hour of day filter
+    filtered_dataframe["hour"] = filtered_dataframe["utc_timestamp"].dt.hour
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["hour"] >= hour_range[0]) & 
+        (filtered_dataframe["hour"] <= hour_range[1])
+    ]
+    
+    # Day of week filter
+    filtered_dataframe["day_of_week"] = filtered_dataframe["utc_timestamp"].dt.dayofweek
+    filtered_dataframe = filtered_dataframe[filtered_dataframe["day_of_week"].isin(selected_day_nums)]
+    
+    # Month filter
+    filtered_dataframe["month"] = filtered_dataframe["utc_timestamp"].dt.month
+    filtered_dataframe = filtered_dataframe[filtered_dataframe["month"].isin(selected_month_nums)]
+    
+    # Solar generation range filter
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["solar"] >= solar_range[0]) & 
+        (filtered_dataframe["solar"] <= solar_range[1])
+    ]
+    
+    # Wind generation range filter
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["wind"] >= wind_range[0]) & 
+        (filtered_dataframe["wind"] <= wind_range[1])
+    ]
+    
+    # Demand range filter
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["demand"] >= demand_range[0]) & 
+        (filtered_dataframe["demand"] <= demand_range[1])
+    ]
+    
+    # Shortfall range filter
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe["shortfall"] >= shortfall_range[0]) & 
+        (filtered_dataframe["shortfall"] <= shortfall_range[1])
+    ]
+    
+    # Show only shortfall periods filter
+    if show_only_shortfall:
+        filtered_dataframe = filtered_dataframe[filtered_dataframe["shortfall"] > 0]
+    
+    # Deviation range filter
+    filtered_dataframe = filtered_dataframe[
+        (filtered_dataframe[deviation_column] >= deviation_range[0]) & 
+        (filtered_dataframe[deviation_column] <= deviation_range[1])
+    ]
 
     # Summary metrics
     total_generation = filtered_dataframe["generation_total"].sum()
     total_demand = filtered_dataframe["demand"].sum()
     total_shortfall = filtered_dataframe["shortfall"].sum()
+    
+    # Filter statistics
+    total_records = len(dataframe)
+    filtered_records = len(filtered_dataframe)
+    filter_efficiency = (filtered_records / total_records * 100) if total_records > 0 else 0
 
     # Top-level metrics
-    metric_col1, metric_col2, metric_col3 = st.columns([1,1,1])
-    metric_col1.metric("Total generation (Solar + Wind)", format_large_number(total_generation) + " MW·hrs")
-    metric_col2.metric("Total demand", format_large_number(total_demand) + " MW·hrs")
-    metric_col3.metric("Total shortfall (only deficits)", format_large_number(total_shortfall) + " MW·hrs")
+    st.markdown("### 📈 Filtered Data Summary")
+    metric_col1, metric_col2, metric_col3, metric_col4, metric_col5 = st.columns(5)
+    metric_col1.metric("Records Matched", f"{filtered_records:,} / {total_records:,}")
+    metric_col2.metric("Filter Coverage", f"{filter_efficiency:.1f}%")
+    metric_col3.metric("Total Generation", format_large_number(total_generation) + " MW·hrs")
+    metric_col4.metric("Total Demand", format_large_number(total_demand) + " MW·hrs")
+    metric_col5.metric("Total Shortfall", format_large_number(total_shortfall) + " MW·hrs")
 
     if filtered_dataframe.empty:
         st.warning("No data matches the selected filters. Try expanding the date range or deviation slider.")
@@ -405,7 +509,103 @@ def main():
 
     # Prediction section
     st.markdown("---")
-    st.markdown("## Model-Based Predictions")
+    
+    # Advanced Statistics Section
+    st.markdown("## 📊 Detailed Statistics")
+    
+    stats_col1, stats_col2 = st.columns(2)
+    
+    with stats_col1:
+        st.subheader("Generation & Demand Stats")
+        stats_data = {
+            "Metric": ["Solar (MW)", "Wind (MW)", "Generation (MW)", "Demand (MW)", "Shortfall (MW)"],
+            "Mean": [
+                f"{filtered_dataframe['solar'].mean():.0f}",
+                f"{filtered_dataframe['wind'].mean():.0f}",
+                f"{filtered_dataframe['generation_total'].mean():.0f}",
+                f"{filtered_dataframe['demand'].mean():.0f}",
+                f"{filtered_dataframe['shortfall'].mean():.0f}",
+            ],
+            "Median": [
+                f"{filtered_dataframe['solar'].median():.0f}",
+                f"{filtered_dataframe['wind'].median():.0f}",
+                f"{filtered_dataframe['generation_total'].median():.0f}",
+                f"{filtered_dataframe['demand'].median():.0f}",
+                f"{filtered_dataframe['shortfall'].median():.0f}",
+            ],
+            "Std Dev": [
+                f"{filtered_dataframe['solar'].std():.0f}",
+                f"{filtered_dataframe['wind'].std():.0f}",
+                f"{filtered_dataframe['generation_total'].std():.0f}",
+                f"{filtered_dataframe['demand'].std():.0f}",
+                f"{filtered_dataframe['shortfall'].std():.0f}",
+            ],
+            "Min": [
+                f"{filtered_dataframe['solar'].min():.0f}",
+                f"{filtered_dataframe['wind'].min():.0f}",
+                f"{filtered_dataframe['generation_total'].min():.0f}",
+                f"{filtered_dataframe['demand'].min():.0f}",
+                f"{filtered_dataframe['shortfall'].min():.0f}",
+            ],
+            "Max": [
+                f"{filtered_dataframe['solar'].max():.0f}",
+                f"{filtered_dataframe['wind'].max():.0f}",
+                f"{filtered_dataframe['generation_total'].max():.0f}",
+                f"{filtered_dataframe['demand'].max():.0f}",
+                f"{filtered_dataframe['shortfall'].max():.0f}",
+            ]
+        }
+        st.dataframe(pd.DataFrame(stats_data), use_container_width=True, hide_index=True)
+    
+    with stats_col2:
+        st.subheader("Shortfall Analysis")
+        shortfall_df = filtered_dataframe[filtered_dataframe["shortfall"] > 0]
+        shortfall_pct = (len(shortfall_df) / len(filtered_dataframe) * 100) if len(filtered_dataframe) > 0 else 0
+        
+        col_a, col_b = st.columns(2)
+        col_a.metric("Periods with Shortfall", f"{len(shortfall_df):,} ({shortfall_pct:.1f}%)")
+        col_a.metric("Avg Shortfall (when occurs)", f"{shortfall_df['shortfall'].mean():.0f} MW" if len(shortfall_df) > 0 else "N/A")
+        col_b.metric("Max Shortfall", f"{filtered_dataframe['shortfall'].max():.0f} MW")
+        col_b.metric("Total Shortfall Hours", f"{total_shortfall:.0f} MW·hrs")
+    
+    # Breakdown by time dimensions
+    st.markdown("### Breakdown by Time")
+    time_col1, time_col2, time_col3 = st.columns(3)
+    
+    with time_col1:
+        st.subheader("By Hour of Day")
+        hourly = filtered_dataframe.groupby("hour").agg({
+            "generation_total": "mean",
+            "demand": "mean",
+            "shortfall": "mean"
+        }).round(0)
+        st.line_chart(hourly)
+    
+    with time_col2:
+        st.subheader("By Day of Week")
+        days_map = {0: "Mon", 1: "Tue", 2: "Wed", 3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}
+        daily = filtered_dataframe.groupby("day_of_week").agg({
+            "generation_total": "mean",
+            "demand": "mean",
+            "shortfall": "mean"
+        }).round(0)
+        daily.index = daily.index.map(days_map)
+        st.bar_chart(daily)
+    
+    with time_col3:
+        st.subheader("By Month")
+        month_map = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+                     7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"}
+        monthly = filtered_dataframe.groupby("month").agg({
+            "generation_total": "mean",
+            "demand": "mean",
+            "shortfall": "mean"
+        }).round(0)
+        monthly.index = monthly.index.map(month_map)
+        st.bar_chart(monthly)
+    
+    st.markdown("---")
+    st.markdown("## 🤖 Model-Based Predictions")
     
     models = load_models()
     if models:
