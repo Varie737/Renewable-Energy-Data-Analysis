@@ -234,18 +234,19 @@ def load_models():
         random_forest_model = joblib.load(str(rf_path))
         prophet_model = joblib.load(str(prophet_path))
         
-        # Try loading NeuralProphet with the save method format
-        try:
-            neuralprophet_model = NeuralProphet.load(str(models_dir / "neuralprophet_model"))
-        except Exception:
-            # Fallback: try joblib
-            neuralprophet_model = joblib.load(str(models_dir / "neuralprophet_model.joblib"))
+        #TODO - NeuralProphet is giving memory issues. Will try to save a smaller version of the model without the AR layers and see if that works.
+        # # Try loading NeuralProphet with the save method format
+        # try:
+        #     neuralprophet_model = NeuralProphet.load(str(models_dir / "neuralprophet_model"))
+        # except Exception:
+        #     # Fallback: try joblib
+        #     neuralprophet_model = joblib.load(str(models_dir / "neuralprophet_model.joblib"))
         
         feature_info = joblib.load(str(feature_path))
         return {
             "random_forest": random_forest_model,
             "prophet": prophet_model,
-            "neuralprophet": neuralprophet_model,
+            # "neuralprophet": neuralprophet_model,
             "feature_info": feature_info
         }
     except Exception as e:
