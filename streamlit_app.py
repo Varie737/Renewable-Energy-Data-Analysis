@@ -204,20 +204,44 @@ def format_large_number(x: float) -> str:
 @st.cache_resource
 def load_models():
     """Load all trained models and feature information."""
-    models_dir = Path(__file__).resolve().parent / "models"
-    
     try:
-        random_forest_model = joblib.load(models_dir / "random_forest_model.joblib")
-        prophet_model = joblib.load(models_dir / "prophet_model.joblib")
+        # Use current working directory as fallback
+        models_dir = Path(__file__).resolve().parent / "models"
+        
+        # If that doesn't exist, try from cwd
+        if not models_dir.exists():
+            models_dir = Path.cwd() / "models"
+        
+        if not models_dir.exists():
+            st.error(f"Models directory not found at: {models_dir}")
+            return None
+        
+        # Load models with better error handling
+        rf_path = models_dir / "random_forest_model.joblib"
+        prophet_path = models_dir / "prophet_model.joblib"
+        feature_path = models_dir / "feature_info.joblib"
+        
+        if not rf_path.exists():
+            st.error(f"Random Forest model not found at: {rf_path}")
+            return None
+        if not prophet_path.exists():
+            st.error(f"Prophet model not found at: {prophet_path}")
+            return None
+        if not feature_path.exists():
+            st.error(f"Feature info not found at: {feature_path}")
+            return None
+        
+        random_forest_model = joblib.load(str(rf_path))
+        prophet_model = joblib.load(str(prophet_path))
         
         # Try loading NeuralProphet with the save method format
         try:
             neuralprophet_model = NeuralProphet.load(str(models_dir / "neuralprophet_model"))
         except Exception:
             # Fallback: try joblib
-            neuralprophet_model = joblib.load(models_dir / "neuralprophet_model.joblib")
+            neuralprophet_model = joblib.load(str(models_dir / "neuralprophet_model.joblib"))
         
-        feature_info = joblib.load(models_dir / "feature_info.joblib")
+        feature_info = joblib.load(str(feature_path))
         return {
             "random_forest": random_forest_model,
             "prophet": prophet_model,
@@ -226,6 +250,8 @@ def load_models():
         }
     except Exception as e:
         st.error(f"Models not found or error loading models: {str(e)}")
+        import traceback
+        st.error(f"Traceback: {traceback.format_exc()}")
         return None
 
 
