@@ -8,6 +8,9 @@ Run with: python dashboard.py
 Then navigate to http://localhost:8050
 """
 
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='numpy')
+
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
@@ -423,20 +426,20 @@ app.layout = dbc.Container([
                 ], width="auto"),
                 dbc.Col([
                     dcc.Link(
-                        dbc.NavLink("Overview", href="/", active="exact"),
-                        style={'textDecoration': 'none'}
+                        "Overview", href="/",
+                        style={'textDecoration': 'none', 'color': 'white'}
                     ),
                     dcc.Link(
-                        dbc.NavLink("Time Series", href="/scenarios", active="exact"),
-                        style={'textDecoration': 'none'}
+                        "Time Series", href="/scenarios",
+                        style={'textDecoration': 'none', 'color': 'white'}
                     ),
                     dcc.Link(
-                        dbc.NavLink("Storage", href="/battery", active="exact"),
-                        style={'textDecoration': 'none'}
+                        "Storage", href="/battery",
+                        style={'textDecoration': 'none', 'color': 'white'}
                     ),
                     dcc.Link(
-                        dbc.NavLink("Metrics", href="/metrics", active="exact"),
-                        style={'textDecoration': 'none'}
+                        "Metrics", href="/metrics",
+                        style={'textDecoration': 'none', 'color': 'white'}
                     ),
                 ], className="d-flex gap-3 ms-auto"),
             ], align="center"),
@@ -879,4 +882,4 @@ if __name__ == '__main__':
     print("  - Metrics: Comprehensive comparison and analytics")
     print("\nPress Ctrl+C to stop the server\n")
     
-    app.run_server(debug=True, port=8050)
+    app.run(debug=True, port=8050)
