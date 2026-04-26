@@ -5,6 +5,7 @@ A comprehensive system for analyzing renewable energy scenarios with battery sto
 ## 🚀 Project Summary
 
 This project extends the original 2012-2020 shortfall analysis with:
+
 - **Three-scenario forecasting** (best/average/worst case) for solar and wind generation
 - **Battery storage optimization** modeling (5-50 GWh configurations)
 - **Interactive dashboard** for stakeholder exploration and decision-making
@@ -17,6 +18,7 @@ This project extends the original 2012-2020 shortfall analysis with:
 ## 🎯 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Python 3.8+ with pip
 python --version  # Should be 3.8+
@@ -40,6 +42,7 @@ python dashboard.py
 ```
 
 ### Dashboard Features
+
 - **Overview Page**: KPI cards and scenario selector
 - **Time Series Page**: Interactive charts with date range slider
 - **Battery Storage Page**: What-if analysis for 5/10/20/50 GWh batteries
@@ -52,6 +55,7 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ## 📊 Key Results
 
 ### Renewable Coverage (Average %)
+
 | Scenario | Coverage | Max Shortfall | Unmet Days |
 |----------|----------|---------------|-----------|
 | Worst Case | 20.1% | 65.2 GW | 2,099/2,101 |
@@ -59,6 +63,7 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 | Best Case | 38.6% | 56.1 GW | 2,086/2,101 |
 
 ### Battery Impact: 20 GWh Storage
+
 | Scenario | Shortfall Reduction | CAPEX | Residual Shortfall |
 |----------|-------------------|-------|-------------------|
 | Worst Case | 6.8% | $3.0M | 3,624 GWh/yr |
@@ -72,7 +77,8 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ## 📁 Project Structure
 
 ### Code Files
-```
+
+```txt
 ├── dashboard.py                 # Interactive web application (Plotly/Dash)
 ├── battery_storage_model.py    # Battery optimization algorithm
 ├── generate_scenarios.py        # Scenario generation pipeline
@@ -81,7 +87,8 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ```
 
 ### Data Files
-```
+
+```txt
 ├── scenario_forecasts.csv       # Main dataset (6,303 rows)
 ├── battery_storage_analysis.csv # Battery metrics summary
 ├── dispatch_*.csv               # Hourly dispatch details (12 files)
@@ -89,7 +96,8 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ```
 
 ### Documentation
-```
+
+```txt
 ├── README.md                    # This file
 ├── PROJECT_SUMMARY.md          # Comprehensive project overview
 ├── DASHBOARD_README.md         # Dashboard setup & features
@@ -102,33 +110,38 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ## 🔋 Phase Breakdown
 
 ### Phase 1: Data Loading & Scenarios ✅
+
 - Loaded OPSD electricity API (50,401 hourly records)
 - Generated synthetic weather patterns
 - Created 3 scenario forecasts with multipliers
 - Output: `scenario_forecasts.csv` (6,303 daily records)
 
 ### Phase 2: Battery Storage Model ✅
+
 - Implemented greedy dispatch algorithm
 - Modeled 4 battery configurations (5/10/20/50 GWh)
 - Analyzed cycling patterns and economics
 - Output: `battery_storage_analysis.csv`, `dispatch_*.csv`
 
 ### Phase 3: Visualizations ✅
+
 - 6 static publication-ready PNG charts (300 DPI)
 - Stacked area, line chart, small multiples, heatmap, etc.
 - Output: `visualizations/` directory
 
 ### Phase 4: Interactive Dashboard ✅
+
 - Built multi-page Dash web application
 - 4 pages: Overview, Time Series, Storage, Metrics
 - Real-time filtering and interactive charts
-- Output: Live dashboard at http://localhost:8050
+- Output: Live dashboard at <http://localhost:8050>
 
 ---
 
 ## 📈 How to Use
 
 ### For Policy Makers
+
 ```bash
 python dashboard.py
 # Navigate to Overview page
@@ -137,6 +150,7 @@ python dashboard.py
 ```
 
 ### For Grid Operators
+
 ```bash
 # Time Series page: detailed shortfall patterns
 # Storage page: battery dispatch optimization
@@ -144,6 +158,7 @@ python dashboard.py
 ```
 
 ### For Investors
+
 ```bash
 # Storage page: battery CAPEX and payback analysis
 # Metrics page: scenario comparison (risk assessment)
@@ -151,6 +166,7 @@ python dashboard.py
 ```
 
 ### For Researchers
+
 ```bash
 # Edit generate_scenarios.py to modify scenario multipliers
 # Create new battery configs in battery_storage_model.py
@@ -171,7 +187,9 @@ python dashboard.py
 | **UI Framework** | Bootstrap | Responsive styling |
 
 ### Dependencies
+
 See `requirements.txt` for full list. Key packages:
+
 - `plotly` - Interactive charts
 - `dash` - Web framework
 - `dash-bootstrap-components` - UI styling
@@ -184,6 +202,7 @@ See `requirements.txt` for full list. Key packages:
 ## 🔍 Documentation
 
 ### Main Documents
+
 1. **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** ← Start here for overview
    - Complete project architecture
    - Technical decisions and rationale
@@ -206,21 +225,26 @@ See `requirements.txt` for full list. Key packages:
 
 ## 💡 Key Files Explained
 
-### battery_storage_model.py (470 lines)
+### battery_storage_model.py
+
 Implements battery storage optimization:
+
 - **BatteryConfig class**: Configurable battery parameters
 - **calculate_battery_dispatch()**: Greedy dispatch algorithm
 - **analyze_battery_impact()**: Metrics calculation
 - **Output**: Battery analysis CSVs and dispatch details
 
 Key features:
+
 - Round-trip efficiency modeling (87% realistic)
 - SOC bounds enforcement (20-100%)
 - Rate limit constraints (1-5 GW)
 - Economic metrics (CAPEX, O&M, payback)
 
-### dashboard.py (820 lines)
+### dashboard.py
+
 Multi-page Plotly/Dash application:
+
 - **4 Pages**: Overview, Time Series, Battery, Metrics
 - **12+ Charts**: Real-time interactive visualizations
 - **Callbacks**: Responsive to user interactions
@@ -228,14 +252,17 @@ Multi-page Plotly/Dash application:
 
 Run with: `python dashboard.py`
 
-### generate_scenarios.py (270 lines)
+### generate_scenarios.py
+
 Data pipeline for scenario generation:
+
 - **Data Loading**: OPSD API electricity data
 - **Scenario Definition**: Worst/average/best multipliers
 - **Weather Synthesis**: Realistic synthetic patterns
 - **Output**: scenario_forecasts.csv (6,303 rows)
 
 Modifiable parameters:
+
 - Capacity factor multipliers (line 129-170)
 - Date range (line 49)
 - Synthetic weather parameters (line 41-104)
@@ -245,6 +272,7 @@ Modifiable parameters:
 ## 📊 Data Dictionary
 
 ### scenario_forecasts.csv (Main Dataset)
+
 | Column | Unit | Description |
 |--------|------|-------------|
 | date | YYYY-MM-DD | Day of forecast |
@@ -258,6 +286,7 @@ Modifiable parameters:
 | scenario | worst/avg/best | Forecast scenario |
 
 ### battery_storage_analysis.csv
+
 | Column | Unit | Description |
 |--------|------|-------------|
 | scenario | worst/avg/best | Scenario name |
@@ -273,6 +302,7 @@ Modifiable parameters:
 ## 🎨 Color Scheme
 
 Consistent across all visualizations:
+
 - **Worst Case**: #e08adf (Light Orchid)
 - **Average Case**: #c06bb7 (Pink-Purple)
 - **Best Case**: #9b59b6 (Purple)
@@ -298,6 +328,7 @@ Suitable for: 1-5 year analysis windows
 ## 🔧 Troubleshooting
 
 ### Dashboard won't start
+
 ```bash
 # Check Python version (3.8+)
 python --version
@@ -310,6 +341,7 @@ pip install -r requirements.txt
 ```
 
 ### Data not loading
+
 ```bash
 # Check files exist in current directory
 ls scenario_forecasts.csv battery_storage_analysis.csv
@@ -319,6 +351,7 @@ head -1 scenario_forecasts.csv  # Should show headers
 ```
 
 ### Import errors
+
 ```bash
 # Reinstall Dash ecosystem
 pip install --upgrade dash plotly dash-bootstrap-components
@@ -334,11 +367,13 @@ pip install -r requirements.txt
 ## 📚 References
 
 ### Related Documentation
+
 - [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Complete technical overview
 - [DASHBOARD_README.md](DASHBOARD_README.md) - Dashboard user guide
 - [SCENARIO_ANALYSIS_GUIDE.md](SCENARIO_ANALYSIS_GUIDE.md) - Methodology
 
 ### External Resources
+
 - [OPSD Data](https://data.open-power-system-data.org/)
 - [Dash Documentation](https://dash.plotly.com/)
 - [Plotly Python](https://plotly.com/python/)
@@ -358,6 +393,7 @@ pip install -r requirements.txt
 ## 📄 Original Analysis
 
 The original notebook (`Renewable Energy Data Analysis project.ipynb`) contains:
+
 - EDA of 2012-2020 Germany electricity data
 - Random Forest and Prophet forecasting models (R² ~0.98 and ~0.77)
 - Weather impact analysis and feature importance
@@ -380,6 +416,7 @@ This project builds on that foundation with scenario analysis and storage optimi
 ## 📧 Support
 
 For questions about:
+
 - **Dashboard**: See [DASHBOARD_README.md](DASHBOARD_README.md)
 - **Battery Model**: See `battery_storage_model.py` docstrings
 - **Scenarios**: See [SCENARIO_ANALYSIS_GUIDE.md](SCENARIO_ANALYSIS_GUIDE.md)
@@ -390,10 +427,6 @@ For questions about:
 ## 📜 License
 
 This project builds on data from:
+
 - [OPSD](https://data.open-power-system-data.org/) (CC-BY 4.0)
 - Original analysis foundation (MIT License)
-
----
-
-**Last Updated**: 2026-04-02
-**Status**: Ready for Production
