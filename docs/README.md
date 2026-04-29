@@ -2,20 +2,18 @@
 
 A comprehensive system for analyzing renewable energy scenarios with battery storage optimization and interactive data exploration.
 
-## 🚀 Project Summary
+## Project Summary
 
 This project extends the original 2012-2020 shortfall analysis with:
 
 - **Three-scenario forecasting** (best/average/worst case) for solar and wind generation
 - **Battery storage optimization** modeling (5-50 GWh configurations)
 - **Interactive dashboard** for stakeholder exploration and decision-making
-- **Publication-ready visualizations** for presentations and reports
-
-**Status**: ✅ Complete and operational
+- **Publication-ready visualizations** for presentations and reports is organized into modular files for data processing, modeling, and visualization. The dashboard provides real-time insights into renewable coverage, shortfall patterns, and storage impacts.
 
 ---
 
-## 🎯 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -54,7 +52,7 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 
 ---
 
-## 📊 Key Results
+## Key Results
 
 ### Renewable Coverage (Average %)
 
@@ -76,7 +74,7 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ### Code Files
 
@@ -117,29 +115,39 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 
 ---
 
-## 🔋 Phase Breakdown
+## Phase Breakdown
 
-### Phase 1: Data Loading & Scenarios ✅
+Each phase corresponds to a notebook in the `src/` directory, with outputs feeding into the next phase. The final dashboard integrates all results for interactive exploration. The python files in the `app/` directory contain the core logic for scenario generation, battery modeling, and dashboard functionality, while the notebooks in `src/` provide detailed analysis and visualization steps.
+
+### Phase 1: Data Loading & Scenarios
+
+`ingestion/01_data_ingestion.ipynb` → `app/generate_scenarios.py`
 
 - Loaded OPSD electricity API (50,401 hourly records)
 - Generated synthetic weather patterns
 - Created 3 scenario forecasts with multipliers
 - Output: `scenario_forecasts.csv` (6,303 daily records)
 
-### Phase 2: Battery Storage Model ✅
+### Phase 2: Battery Storage Model
+
+`models/03_modeling.ipynb` → `app/battery_storage_model.py`
 
 - Implemented greedy dispatch algorithm
 - Modeled 4 battery configurations (5/10/20/50 GWh)
 - Analyzed cycling patterns and economics
 - Output: `battery_storage_analysis.csv`, `dispatch_*.csv`
 
-### Phase 3: Visualizations ✅
+### Phase 3: Visualizations
+
+`visualization/05_visualization.ipynb` → `app/create_visualizations.py`
 
 - 6 static publication-ready PNG charts (300 DPI)
 - Stacked area, line chart, small multiples, heatmap, etc.
 - Output: `visualizations/` directory
 
-### Phase 4: Interactive Dashboard ✅
+### Phase 4: Interactive Dashboard
+
+`app/dashboard.py`
 
 - Built multi-page Dash web application
 - 4 pages: Overview, Time Series, Storage, Metrics
@@ -148,7 +156,7 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 
 ---
 
-## 📈 How to Use
+## How to Use
 
 ### For Policy Makers
 
@@ -185,7 +193,7 @@ python dashboard.py
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -198,7 +206,7 @@ python dashboard.py
 
 ### Dependencies
 
-See `requirements.txt` for full list. Key packages:
+See [requirements.txt](requirements.txt) for full list. Key packages:
 
 - `plotly` - Interactive charts
 - `dash` - Web framework
@@ -209,7 +217,7 @@ See `requirements.txt` for full list. Key packages:
 
 ---
 
-## 🔍 Documentation
+## Documentation
 
 ### Main Documents
 
@@ -233,7 +241,7 @@ See `requirements.txt` for full list. Key packages:
 
 ---
 
-## 💡 Key Files Explained
+## Key Files Explained
 
 ### battery_storage_model.py
 
@@ -279,7 +287,7 @@ Modifiable parameters:
 
 ---
 
-## 📊 Data Dictionary
+## Data Dictionary
 
 ### scenario_forecasts.csv (Main Dataset)
 
@@ -309,33 +317,7 @@ Modifiable parameters:
 
 ---
 
-## 🎨 Color Scheme
-
-Consistent across all visualizations:
-
-- **Worst Case**: #e08adf (Light Orchid)
-- **Average Case**: #c06bb7 (Pink-Purple)
-- **Best Case**: #9b59b6 (Purple)
-- **Demand**: #e74c3c (Red)
-- **Background**: #faf6fb (Light background)
-
----
-
-## ⚡ Performance
-
-| Metric | Value |
-|--------|-------|
-| Data Records | 6,303 (daily) |
-| Time Period | 2014-09-01 to 2020-09-30 |
-| Dashboard Startup | 2-3 seconds |
-| Interactive Updates | <1 second |
-| Memory Usage | ~50 MB |
-
-Suitable for: 1-5 year analysis windows
-
----
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Dashboard won't start
 
@@ -374,7 +356,7 @@ pip install -r requirements.txt
 
 ---
 
-## 📚 References
+## References
 
 ### Related Documentation
 
@@ -390,7 +372,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 1. **Policy Development**: Assess renewable adequacy and storage needs
 2. **Grid Planning**: Optimize battery deployment timing and sizing
@@ -400,7 +382,7 @@ pip install -r requirements.txt
 
 ---
 
-## 📄 Original Analysis
+## Original Analysis
 
 The original notebook (`Renewable Energy Data Analysis project.ipynb`) contains:
 
@@ -412,18 +394,7 @@ This project builds on that foundation with scenario analysis and storage optimi
 
 ---
 
-## ✅ Project Status
-
-**Phase 1 (Scenarios)**: ✅ Complete
-**Phase 2 (Battery Model)**: ✅ Complete
-**Phase 3 (Visualizations)**: ✅ Complete
-**Phase 4 (Dashboard)**: ✅ Complete
-
-**Ready for**: Stakeholder presentations, investment decisions, policy analysis
-
----
-
-## 📧 Support
+## Support
 
 For questions about:
 
@@ -434,9 +405,5 @@ For questions about:
 
 ---
 
-## 📜 License
-
-This project builds on data from:
-
-- [OPSD](https://data.open-power-system-data.org/) (CC-BY 4.0)
-- Original analysis foundation (MIT License)
+## Credits
+Team members: Varsha Roopchand, Daniel Mangal, Micah Hosein, Adam Mohammed, Kaitlyn Khan
