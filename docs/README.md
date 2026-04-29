@@ -30,14 +30,16 @@ python --version  # Should be 3.8+
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. (Optional) Regenerate forecasts
-python generate_scenarios.py
-python battery_storage_model.py
+# 2. (Optional) Regenerate raw and processed data
+python app/generate_scenarios.py
 
-# 3. Start interactive dashboard
-python dashboard.py
+# 3. Run battery storage analysis
+python app/battery_storage_model.py
 
-# 4. Open browser
+# 4. Start interactive dashboard
+python app/dashboard.py
+
+# 5. Open browser
 # Navigate to: http://localhost:8050
 ```
 
@@ -79,20 +81,28 @@ See [DASHBOARD_README.md](DASHBOARD_README.md) for detailed guide.
 ### Code Files
 
 ```txt
-├── dashboard.py                 # Interactive web application (Plotly/Dash)
-├── battery_storage_model.py    # Battery optimization algorithm
-├── generate_scenarios.py        # Scenario generation pipeline
-├── create_visualizations.py     # Static chart generator
-└── Renewable Energy Data Analysis project.ipynb  # Original notebook (reference)
+├── app/dashboard.py                 # Interactive web application (Plotly/Dash)
+├── app/battery_storage_model.py    # Battery optimization algorithm
+├── app/generate_scenarios.py       # Scenario generation pipeline
+├── app/create_visualizations.py    # Static chart generator
+├── app/streamlit_app.py            # Optional Streamlit interface
+├── src/ingestion/01_data_ingestion.ipynb
+├── src/features/02_feature_engineering.ipynb
+├── src/models/03_modeling.ipynb
+├── src/evaluation/04_evaluation.ipynb
+└── src/visualization/05_visualization.ipynb
 ```
 
 ### Data Files
 
 ```txt
-├── scenario_forecasts.csv       # Main dataset (6,303 rows)
-├── battery_storage_analysis.csv # Battery metrics summary
-├── dispatch_*.csv               # Hourly dispatch details (12 files)
-└── daily_data.csv              # Daily aggregates
+├── data/raw/germany_energy_weather_2012_2020.csv  # Raw hourly source dataset
+├── data/processed/scenario_forecasts.csv          # Scenario forecast dataset
+├── data/processed/daily_data.csv                  # Daily aggregate data
+├── data/processed/battery_storage_analysis.csv    # Battery metrics summary
+├── data/processed/battery_recommendations.csv     # Battery sizing recommendations
+├── data/processed/dispatch_*.csv                  # Detailed dispatch results
+└── visualizations/                                 # Static PNG charts
 ```
 
 ### Documentation

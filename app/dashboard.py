@@ -19,13 +19,16 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
 # Load data
 print("Loading data...")
-scenarios_df = pd.read_csv('scenario_forecasts.csv')
+project_root = Path(__file__).resolve().parents[1]
+processed_dir = project_root / 'data' / 'processed'
+scenarios_df = pd.read_csv(processed_dir / 'scenario_forecasts.csv')
 scenarios_df['date'] = pd.to_datetime(scenarios_df['date'])
-battery_analysis_df = pd.read_csv('battery_storage_analysis.csv')
+battery_analysis_df = pd.read_csv(processed_dir / 'battery_storage_analysis.csv')
 
 # Initialize Dash app
 app = dash.Dash(
@@ -651,7 +654,7 @@ def update_battery_kpis(scenario, battery_config):
 )
 def update_battery_soc_chart(scenario, battery_config):
     """Plot battery state of charge."""
-    filename = f"dispatch_{scenario}_{battery_config.lower().replace('_', '')}.csv"
+    filename = processed_dir / f"dispatch_{scenario}_{battery_config.lower().replace('_', '')}.csv"
     try:
         df = pd.read_csv(filename)
         df['date'] = pd.to_datetime(df['date'])
@@ -685,7 +688,7 @@ def update_battery_soc_chart(scenario, battery_config):
 )
 def update_battery_dispatch_chart(scenario, battery_config):
     """Plot battery charge/discharge."""
-    filename = f"dispatch_{scenario}_{battery_config.lower().replace('_', '')}.csv"
+    filename = processed_dir / f"dispatch_{scenario}_{battery_config.lower().replace('_', '')}.csv"
     try:
         df = pd.read_csv(filename)
         df['date'] = pd.to_datetime(df['date'])

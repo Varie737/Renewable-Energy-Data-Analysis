@@ -8,6 +8,7 @@ import numpy as np
 import requests
 import json
 import os
+from pathlib import Path
 from datetime import datetime
 import warnings
 import sys
@@ -27,9 +28,9 @@ print("=" * 70)
 # ==============================================================================
 print("\n[1/4] Loading Germany Energy & Weather Data...")
 
-csv_file = 'germany_energy_weather_2012_2020.csv'
+csv_file = Path('data/raw/germany_energy_weather_2012_2020.csv')
 
-if os.path.exists(csv_file):
+if csv_file.exists():
     print(f"  [OK] Found existing CSV: {csv_file}")
     df = pd.read_csv(csv_file)
     df['utc_timestamp'] = pd.to_datetime(df['utc_timestamp'])
@@ -208,11 +209,11 @@ all_scenarios = pd.concat(
 )
 
 # Save scenario data
-all_scenarios.to_csv('scenario_forecasts.csv', index=False)
-daily.to_csv('daily_data.csv', index=False)
+all_scenarios.to_csv('data/processed/scenario_forecasts.csv', index=False)
+daily.to_csv('data/processed/daily_data.csv', index=False)
 
-print(f"\n  [OK] Scenario data saved to: scenario_forecasts.csv ({len(all_scenarios)} records)")
-print(f"  [OK] Daily data saved to: daily_data.csv ({len(daily)} records)")
+print(f"\n  [OK] Scenario data saved to: data/processed/scenario_forecasts.csv ({len(all_scenarios)} records)")
+print(f"  [OK] Daily data saved to: data/processed/daily_data.csv ({len(daily)} records)")
 
 print("\n" + "=" * 70)
 print("[COMPLETE] PHASE 1: Data loaded and scenarios generated")

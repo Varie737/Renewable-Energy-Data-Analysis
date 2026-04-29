@@ -189,12 +189,16 @@ def analyze_battery_impact(
 
 def main():
     """Main execution: generate battery storage analysis for all scenarios."""
-    
+
+    project_root = Path(__file__).resolve().parents[1]
+    processed_dir = project_root / 'data' / 'processed'
+    processed_dir.mkdir(parents=True, exist_ok=True)
+
     # Load scenario data
     print("Loading scenario forecasts...")
-    df = pd.read_csv('scenario_forecasts.csv')
+    df = pd.read_csv(processed_dir / 'scenario_forecasts.csv')
     df['date'] = pd.to_datetime(df['date'])
-    
+
     # Define battery configurations to analyze
     battery_configs = {
         'Battery_5GWh': BatteryConfig(
@@ -238,33 +242,33 @@ def main():
             annual_opex_pct=2.5
         ),
     }
-    
+
     # Store results by scenario
     all_results = {}
-    
+
     # Process each scenario
     for scenario in ['worst', 'average', 'best']:
         print(f"\nAnalyzing {scenario} scenario...")
         scenario_df = df[df['scenario'] == scenario].reset_index(drop=True)
-        
+
         results = analyze_battery_impact(scenario_df, battery_configs, scenario)
         all_results[scenario] = results
-        
+
         # Print summary
         print(f"  {scenario.upper()} SCENARIO - Battery Analysis Summary:")
         print(f"  {'Config':<15} {'Shortfall Reduction':<20} {'Days w/ Unmet Demand':<25} {'CAPEX (M USD)':<15}")
         print("  " + "-" * 75)
-        
+
         for config_name, config_result in results['configs'].items():
             metrics = config_result['metrics']
             print(f"  {config_name:<15} {metrics['shortfall_reduction_pct']:>6.1f}% "
                   f"({metrics['baseline_shortfall_gwh']:.1f}->{metrics['residual_shortfall_gwh']:.1f} GWh) "
                   f"{metrics['unmet_days']:>5} days                "
                   f"${metrics['capex_million_usd']:>6.1f}M")
-    
+
     # Generate comprehensive output CSV
     print("\nGenerating storage analysis output files...")
-    
+
     # Create summary table with all battery configs
     summary_rows = []
     for scenario, results in all_results.items():
@@ -275,19 +279,19 @@ def main():
             }
             row.update(config_result['metrics'])
             summary_rows.append(row)
-    
+
     summary_df = pd.DataFrame(summary_rows)
-    summary_df.to_csv('battery_storage_analysis.csv', index=False)
-    print(f"  [OK] Saved battery_storage_analysis.csv ({len(summary_df)} rows)")
-    
+    summary_df.to_csv(processed_dir / 'battery_storage_analysis.csv', index=False)
+    print(f"  [OK] Saved {processed_dir / 'battery_storage_analysis.csv'} ({len(summary_df)} rows)")
+
     # Save dispatch details for each scenario (for dashboard use)
     for scenario, results in all_results.items():
         for config_name, config_result in results['configs'].items():
             dispatch = config_result['dispatch']
-            filename = f"dispatch_{scenario}_{config_name.lower().replace('_', '')}.csv"
+            filename = processed_dir / f"dispatch_{scenario}_{config_name.lower().replace('_', '')}.csv"
             dispatch.to_csv(filename, index=False)
     print(f"  [OK] Saved dispatch files for all scenarios/configs ({len(all_results) * len(battery_configs)} files)")
-    
+
     # Create optimization recommendation CSV
     print("\nGenerating optimization recommendations...")
     recommendations = []
@@ -297,17 +301,17 @@ def main():
         configs = results['configs']
         best_config = None
         best_cost_effectiveness = float('inf')
-        
+
         for config_name, config_result in configs.items():
             reduction = config_result['metrics']['shortfall_reduction_pct']
             capex = config_result['metrics']['capex_million_usd']
-            
+
             if reduction >= target_reduction:
                 cost_per_percent = capex / (reduction + 1)  # Avoid division by zero
                 if cost_per_percent < best_cost_effectiveness:
                     best_config = config_name
                     best_cost_effectiveness = cost_per_percent
-        
+
         if best_config:
             rec_metrics = results['configs'][best_config]['metrics']
             recommendations.append({
@@ -320,15 +324,15 @@ def main():
                 'payback_assumption_years': rec_metrics['capex_million_usd'] / rec_metrics['annual_opex_million_usd'] if rec_metrics['annual_opex_million_usd'] > 0 else 0,
                 'note': f"Achieves {rec_metrics['shortfall_reduction_pct']:.1f}% shortfall reduction at optimal cost-effectiveness"
             })
-    
+
     rec_df = pd.DataFrame(recommendations)
-    rec_df.to_csv('battery_recommendations.csv', index=False)
-    print(f"  [OK] Saved battery_recommendations.csv ({len(rec_df)} rows)")
-    
+    rec_df.to_csv(processed_dir / 'battery_recommendations.csv', index=False)
+    print(f"  [OK] Saved {processed_dir / 'battery_recommendations.csv'} ({len(rec_df)} rows)")
+
     print("\n[COMPLETE] Battery storage analysis finished successfully!")
     print("\nKey Outputs:")
-    print("  - battery_storage_analysis.csv: Comprehensive metrics for all configs/scenarios")
-    print("  - battery_recommendations.csv: Optimal battery sizing by scenario")
+    print(f"  - {processed_dir / 'battery_storage_analysis.csv'}: Comprehensive metrics for all configs/scenarios")
+    print(f"  - {processed_dir / 'battery_recommendations.csv'}: Optimal battery sizing by scenario")
     print("  - dispatch_*.csv: Detailed hourly dispatch for each config/scenario")
 
 
