@@ -209,5 +209,18 @@ pip install -r requirements.txt
 
 ## Credits
 
-Humans: Varsha Roopchand, Daniel Mangal, Micah Hosein, Adam Mohammed, Kaitlyn Khan
-AI: Copilot (code generation), ChatGPT (writing assistance)
+### Humans
+
+| Name              | Student ID |
+|-------------------|------------|
+| Varsha Roopchand  | 816039243  |
+| Daniel Mangal     | 816004599  |
+| Micah Hosein      | 816040436  |
+| Adam Mohammed     | 816041441  |
+| Kaitlyn Khan      | 816037294  |
+
+### AI Assistance
+
+- Copilot — code generation  
+- ChatGPT — writing assistance
+  
