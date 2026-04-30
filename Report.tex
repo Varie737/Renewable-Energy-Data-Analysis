@@ -1,0 +1,489 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Predicting Renewable Energy Supply Shortfalls Using Time-Series Forecasting}
+
+\author{
+\IEEEauthorblockN{Varsha Roopchand, Daniel Mangal, Micah Hosein, Adam Mohammed, and Kaitlyn Khan}
+\IEEEauthorblockA{The University of the West Indies, St. Augustine Campus\\
+Email: \{varsha.roopchand, daniel.mangal, micah.hosein, adam.mohammed, kaitlyn.khan\}@my.uwi.edu}
+}
+
+\maketitle
+\begin{abstract}
+As fossil fuel resources continue to deplete, other sources are required to replace the growing demand of energy, solar and wind energy are one of the leading replacements, but their generation tends to be variable. This study aims to develop a predictive model for forecasting renewable energy supply shortfalls in Germany using historical electricity generation, electricity demand, and weather data. Historical datasets were downloaded, preprocessed, and used to train and compare Random Forest, Prophet, and NeuralProphet forecasting models, with performance evaluated using MAE, RMSE, and \(R^2\). The best performing model, NeuralProphet achieved an RMSE of 1{,}328.29 MW and an \(R^2\) of 0.9877 on the unseen 2020 test year, while the inclusion of lag features reduced the Random Forest RMSE from 6{,}598.63 MW to 1{,}494.50 MW. The findings indicate that recent historical shortfall values and temporal dependencies are the strongest predictors of renewable energy shortfall, and that renewable generation alone was insufficient to meet Germany's electricity demand across the tested scenarios. Battery storage reduced shortfall by up to 14.4\% under best-case conditions, showing that storage can act as a useful supplementary buffer but cannot fully solve national-scale shortfall at the capacities modelled. Overall, the study demonstrates that machine-learning time-series forecasting can support renewable energy planning, but reliable grid operation still requires expanded renewable capacity, storage, and backup generation strategies.
+\end{abstract}
+
+\section{Problem Statement}
+\textit{As renewable energy penetration increases, power systems face growing challenges in balancing electricity supply and demand. Wind and solar generation are weather-dependent energy sources, which can lead to shortfalls. This project aims to develop a predictive model that forecasts renewable energy supply shortfalls, using historical generation and weather data.}
+
+\section{Introduction}
+Electrical energy has become a necessity since the industrial revolution and its consumption has only increased with about 167 000 $TW\,h$ reported use in 2020, statistics project a 2\% increase in demand annually. Traditionally, energy is produced from the burning of coal, fossil fuels and natural gases. However, these are the largest source of carbon dioxide emissions among other pollutants, furthermore they are non-renewable and can not permanently satisfy the energy demand in the future. The global transition toward renewable energy has accelerated in recent decades as countries seek to reduce greenhouse gas emissions, improve energy security, and lessen dependence on fossil fuels. Among the available renewable technologies, wind and solar energy have emerged as two of the most rapidly expanding sources of electricity generation. \cite{owid_energy}.
+\\ Wind energy generation produced about 4000 $TW\,h$ of the energy consumed in 2020. \cite{owid_energy}. It utilizes Bernoulli's principle to convert kinetic energy from wind into electric energy. This occurs due to differences in wind speeds at the top of the blades and the bottom, creating a pressure gradient. This in turn creates a lift force allowing the attached rotor to turn on its axis, becoming mechanical energy where the attached generator converts the mechanical energy into electrical energy. The energy sources have many advantages, including low operational costs, remote usage, and high efficiency. However, the efficiency is limited by meteorological conditions such as wind speed and temperature. In these cases, the wind energy production may near zero given the wind speed is cubically related to the power generated and temperature is contributor to wind speed. Hence, it is essential to track these metrological conditions to understand the wind predications. \cite{hu_wind_energy,twidell_weir}.
+\\ Additionally, photovoltaic solar systems convert incoming electromagnetic radiation from the sun into useful electric energy, contributing to 2000 $TW\,h$ of the energy consumed in 2020. \cite{owid_energy}. This is accomplished by the use of semiconductors, which free the electrons when a photon of electromagnetic radiation strikes the cell, leaving behind positive 'holes' (electron-hole pair separation), thereby creating a potential difference. This potential difference creates a direct current which flows from the PV cell to an inverter. There, the current becomes AC, allowing it to join the grid. Solar energy provides many benefits, including low maintenance and lower carbon emissions. However, despite these advantages, solar generation is inherently variable because its output is dependent on weather conditions such as cloud cover, seasonal sunlight availability, and temperature.\cite{usdoe_solar,twidell_weir}
+\\This variability in these sources of energy creates a challenge for modern power systems. Electricity demand must be balanced continuously with available supply. However, renewable generation does not necessarily coincide with periods of high consumption. As a result, renewable energy shortfalls may occur when electricity demand exceeds the combined output of wind and solar resources. During such periods, additional supply must be obtained from conventional generation sources (fossil fuels), imports, storage systems, or demand-side management strategies. Accurate prediction of renewable shortfalls is therefore valuable for grid operators and policymakers, as it can improve dispatch planning, enhance system reliability, reduce operational costs, and support the efficient integration of renewable energy into the grid. \cite{kadampur_solar_case}.
+\\ Germany has become a world leader in renewable energy deployment through its Renewable Energy Resources Act since 2000. Following 2014,  over 38\% of their annual energy output has been sourced from renewables. Over the past two decades, Germany has invested heavily in both wind and solar power, resulting in significant renewable penetration within its electricity mix. About 22\% is covered by solar (photovoltaic) installations and wind turbines. \cite{bmwe_renewable_energy}. Furthermore, Germany experiences strong weather variation, from periods of extreme heat to periods of excessive rainfall, including darker winter months with reduced solar irradiance and variable wind regimes, making it an ideal environment for studying the relationship between renewable generation, electricity demand, and shortfall risk.\cite{dwd_climate}.
+\section{Literature Review}
+A key theme across the literature was that forecasting needs differ by time horizon. Forecasts may have been categorised from very short-term to long-term, with each horizon serving a different operational purpose. Very short- and short-term forecasts were especially important for real-time grid actions, economic dispatch, and day-ahead scheduling, while medium- and long-term forecasts became more relevant for reserve planning, maintenance, and feasibility studies \cite{chen_xu_china_data}. This distinction mattered because model suitability often changed with the forecasting horizon. Methods that performed adequately over short windows tended to lose accuracy when extended further into the future, particularly for wind, whose variability was more abrupt and less predictable than solar irradiance \cite{prema_review_forecast,alencar_wind_forecasting}. 
+\\The literature generally grouped renewable forecasting methods into physical, statistical, machine-learning, and hybrid approaches. Physical models relied on meteorological inputs such as numerical weather prediction and site-specific system characteristics, and they were be useful where detailed atmospheric information is available. However, they were computationally intensive and were not able to transfer cleanly to every location or operating context \cite{islam_forecasting_resources}. Statistical models, by contrast, use historical time-series structure to project future behaviour. These were comparatively cheaper and easier to implement, and they were widely used for short-term forecasting. However, their performance had a tendency to deteriorate when the data was highly erratic or when forecast horizons became longer. This was especially significant for wind forecasting, where non-stationarity and abrupt fluctuations limited the effectiveness of simple single-model approaches \cite{alencar_wind_forecasting,prema_review_forecast}. 
+\\Within the class of statistical models, ARIMA and SARIMA remained central reference points in the literature. ARIMA was often used to model the irregular component of time-series data, while SARIMA extended this framework to better account for seasonality and trend. \cite{islam_forecasting_resources}. The ARIMA-based models worked best when the series is stationary, whereas solar radiation and wind speed commonly exhibit strong seasonal and trend behaviour, making SARIMA a more suitable extension in many renewable applications. At the same time, the literature repeatedly showed that purely statistical approaches were insufficient when data become strongly nonlinear or highly volatile. In response, machine-learning methods such as artificial neural networks, support vector machines, random forests, deep learning architectures, and ensemble models were used because of their ability to capture nonlinear relationships between meteorological variables and power output \cite{prema_review_forecast,chen_xu_china_data,kadampur_solar_case}. In a wind forecasting case study, report that their hybrid ARIMA + NN1 + NN2 model outperformed the individual ARIMA and neural network alternatives across all forecast horizons examined, while wavelet integration did not significantly improve results over ARIMA alone. These findings reinforce the view that hybrid approaches can better exploit both linear and non-linear structure in renewable time series. \cite{alencar_wind_forecasting}.
+\\A particularly relevant contribution in the uploaded set was the work by \cite{islam_forecasting_resources}, which compared SARIMA and Prophet for forecasting solar radiation and wind velocity in Doomadgee, Far North Queensland. Their study found that Prophet produced lower error metrics than SARIMA for both solar and wind series, with solar MAE and RMSE decreasing from 0.406 and 0.582 under SARIMA to 0.284 and 0.394 under Prophet, and wind MAE and RMSE decreasing from 0.431 and 0.543 to 0.427 and 0.527, respectively. The authors argued that Prophet’s strength lied in its ability to capture trend and seasonality effectively, making it especially attractive for long-range projections of renewable resource availability. Importantly, they connected forecasting performance to practical energy planning by showing how predicted solar and wind resources could be used to estimate future power generation. \cite{islam_forecasting_resources}. 
+\\Another important issue raised in the literature is data quality and representativeness. \cite{chen_xu_china_data} emphasised that the amount and quality of data were fundamental to the development of robust forecasting models. Their dataset paper was particularly valuable because it provided on-site data from six wind farms and eight solar stations, collected at 15-minute intervals over two years using SCADA systems. The authors argued that on-site measurements were more meaningful than simulated datasets for location-specific forecasting, even though such data was harder to collect. They also showed that preprocessing decisions matter greatly: missing values and outliers required careful treatment, yet some apparent outliers may still have reflected meaningful renewable fluctuations rather than noise. Their correlation analysis further demonstrated that wind speed and total solar irradiance were the dominant predictors for wind and solar power output, respectively, underscoring the importance of informed feature selection in data-driven modelling \cite{chen_xu_china_data}. Kadampur’s Saudi Arabian case study similarly stressed the importance of meteorological variables such as temperature, humidity, pressure, and wind speed in shaping solar energy output, while also showing that non-linear modelling can outperform simpler multilinear representations of global horizontal irradiance \cite{kadampur_solar_case}. 
+\\Overall, the literature showed that renewable energy forecasting has evolved from relatively simple statistical methods toward more advanced machine-learning and hybrid frameworks. The main reason for this shift is the intermittent, non-linear, and location-dependent nature of solar and wind resources. Basic time-series approaches remain useful, particularly as benchmarks and in short-term applications, but they are often insufficient on their own when faced with complex seasonal patterns, non-stationarity, and sharp fluctuations. More recent studies therefore favoured hybrid and ensemble methods, or models such as Prophet that could explicitly handle seasonality and trend more flexibly. At the same time, the literature makes clear that model choice could not be separated from data quality, preprocessing, and local context. In this sense, the most effective forecasting framework was not simply the most complex one, but the one best matched to the resource, horizon, and dataset under study \cite{prema_review_forecast,islam_forecasting_resources,chen_xu_china_data,alencar_wind_forecasting}.
+
+\section{Theory}
+\subsection{Data Sources}
+
+Two main data sources were used in this project: Open Power System Data and NASA POWER weather data.
+
+\subsubsection{Open Power System Data}
+
+Electricity data was obtained from the Open Power System Data time-series dataset. The dataset contains hourly electricity system observations for European countries. For this project, Germany was selected as the study location. The data was filtered to cover the period from 2012 to 2020.
+
+The electricity variables selected were:
+
+\begin{itemize}
+    \item Germany electricity load
+    \item Germany wind generation
+    \item Germany solar generation
+\end{itemize}
+
+These variables were used because they were required to calculate the renewable energy shortfall.
+
+\subsubsection{NASA POWER Weather Data}
+
+Weather data was obtained from the NASA POWER API. Hourly weather observations were collected for five German cities: Berlin, Hamburg, Munich, Frankfurt, and Cologne. These cities were selected to provide a general representation of weather conditions across Germany.
+
+The weather variables collected were:
+
+\begin{itemize}
+    \item Solar irradiance
+    \item Wind speed at 10 meters
+    \item Temperature at 2 meters
+\end{itemize}
+
+These variables were selected because they are contributors to solar and wind energy generation and electricity demand.
+
+\subsection{Data Shape}
+The final merged dataset contained 50,295 hourly observations and included electricity load, wind generation, solar generation, renewable energy shortfall, and three averaged weather variables. The data covered the period from January 1, 2012 to December 31, 2020. After merging the electricity and weather datasets by UTC timestamp, the dataset was checked for missing values, duplicated timestamps, summary statistics, and data types. Rows with missing values in the main electricity variables were removed before analysis, and the merged dataset contained no remaining missing values and no duplicated timestamps. 
+\\For the machine learning stage, lag features were created, which introduced missing values at the beginning of the time series. After dropping these rows, the modelling dataset contained 50,127 observations. This was then split chronologically into 43,551 training observations and 6,576 testing observations. These cleaning and preparation steps ensured that the dataset was complete, time-aligned, and suitable for forecasting renewable energy shortfall.
+
+\subsection{Development Environment and Tools}
+The main tools and libraries used were:
+
+\begin{itemize}
+    \item \textbf{Pandas}: Reading datasets, cleaning data, merging tables, creating new variables, and preparing the modelling dataset.
+    \item \textbf{NumPy}: Numerical calculations and array-based operations.
+    \item \textbf{Requests}: Retrieval of hourly weather data from the NASA POWER API.
+    \item \textbf{Matplotlib}: Creation of time-series plots, histograms, scatter plots, and model visualisations.
+    \item \textbf{Seaborn}: Creation of correlation heat-maps and improvements to visual exploration.
+    \item \textbf{Scikit-learn}: Building of Random Forest regression models and calculating regression evaluation metrics.
+    \item \textbf{Prophet}: Creation of a time-series forecasting model with seasonal components.
+    \item \textbf{NeuralProphet:} NeuralProphet is an extension of the Prophet library that replaces the traditional decomposition components with a neural network architecture. It combines an autoregressive module with weather regressors while retaining Prophet's interpretable seasonality structure. The model uses the previous 24 hours of shortfall history as input and includes daily, weekly, and yearly seasonality in multiplicative mode.
+\end{itemize}
+
+\subsection{Prediction Models}
+\begin{itemize}
+    \item Random Forest: This is a machine learning algorithm which utilizes decisions trees and feature randomness to make predictions. It has the ability to handle non linear data relationship and large datasets. It is also very accurate. \cite{kavlakoglu_random_forest}.
+    \item Prophet: Prophet is a forecasting library for time series data. It is based on an additive model where non-linear trends are fit with time and seasonality. 
+    \begin{equation}
+        y(t) = g(t) + s(t)+ h(t) +\varepsilon_t
+    \end{equation}
+    Where, g(t) represents trends long-term growth or decline, s(t) represents seasonality including recurring patterns such as weekly, monthly, or yearly fluctuations, h(t) represents holiday effects which account for irregular but predictable events, such as Christmas. $\varepsilon_t$ is the error accounting for the noise which was not otherwise explained.    \cite{chugh_prophet,prophet_docs}
+\end{itemize}
+The performance of these models were evaluated based on:
+\begin{itemize}
+    \item \textbf{Mean Squared Error (MSE):}  
+    MSE measures the average squared difference between the actual values and the predicted values. A lower MSE indicates a better fit. \cite{chugh_metrics}.
+    \begin{equation}
+    \mathrm{MSE} = \frac{1}{n}\sum_{i=1}^{n}(y_i-\hat{y}_i)^2
+    \end{equation}
+    \item \textbf{Root Mean Squared Error (RMSE):}  
+    RMSE is the square root of the MSE. It measures the typical size of the prediction error and has the same units as the dependent variable. \cite{chugh_metrics}.
+    \begin{equation}
+    \mathrm{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}
+    \end{equation}
+    \item \textbf{Coefficient of Determination (\(R^2\)):}  
+    \(R^2\) shows the proportion of the variance in the dependent variable that is explained by the model. Values closer to 1 indicate a better fit.  \cite{chugh_metrics}.
+    \begin{equation}
+    R^2 = 1 - \frac{\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}{\sum_{i=1}^{n}(y_i-\bar{y})^2}
+    \end{equation}
+\end{itemize}
+
+
+\section{Methodology}
+ 
+The methodology followed a structured pipeline consisting of data collection, data cleaning, data integration, exploratory data analysis, feature engineering, model development, model evaluation, and battery storage optimization.
+ 
+\subsection{Data Collection}
+ 
+The electricity dataset was loaded directly from the Open Power System Data online CSV file using the Pandas library. The timestamp column was converted to datetime format in UTC. Germany was selected as the study location because of its advanced renewable energy infrastructure, high renewable penetration, and strong seasonal weather variability, which makes it a representative and challenging case for shortfall forecasting.
+ 
+Weather data was collected by sending API requests to the NASA POWER hourly endpoint. A request function was constructed to retrieve hourly observations for each city using its latitude and longitude coordinates. This process was repeated for five German cities: Berlin, Hamburg, Munich, Frankfurt, and Cologne. These cities were selected to provide geographic coverage across northern, southern, eastern, western, and central Germany, ensuring that the averaged weather signal was representative of national conditions rather than any single region.
+ 
+\subsection{Data Cleaning}
+ 
+The electricity data was filtered to include only observations between January 1, 2012 and December 31, 2020. Columns were renamed for clarity and consistency. Rows containing missing values in the core electricity variables were removed, as these observations were required to compute the target variable and could not be imputed without introducing bias. The weather timestamps were converted to datetime format in UTC, and weather columns were renamed to identify each city and variable clearly.
+ 
+\subsection{Data Integration}
+ 
+After weather data was collected for all five cities, the city-level datasets were merged by timestamp. Weather values were then averaged across the five cities to produce a single national-level estimate for each hour. This averaging approach was chosen because Germany operates as a single interconnected grid, and national-level shortfall is driven by aggregate rather than local weather conditions. The averaged weather dataset was subsequently merged with the electricity dataset using the UTC timestamp as the join key. An inner join was applied so that only hours present in both datasets were retained in the final dataset.
+ 
+\subsection{Target Variable Construction}
+ 
+The target variable was defined as the renewable energy shortfall, calculated as:
+ 
+\begin{equation}
+    \text{shortfall\_mw} = \text{load\_mw} - \text{wind\_generation\_mw} - \text{solar\_generation\_mw}
+\end{equation}
+ 
+This variable represents the portion of electricity demand not met by wind and solar generation during each hour. Positive values indicate that conventional generation, imports, or storage were required to balance the grid, while values near zero or negative indicate periods of near-surplus renewable output.
+ 
+\subsection{Exploratory Data Analysis}
+ 
+Exploratory data analysis was conducted prior to modelling to understand the statistical structure and temporal behaviour of the dataset. The time range, missing values, data types, and summary statistics were reviewed. Duplicated timestamps were checked and confirmed absent. Time-series plots were produced for electricity load, wind generation, solar generation, and renewable shortfall. Histograms and scatter plots were created to examine variable distributions and the relationships between weather variables and renewable output. A correlation heatmap was generated to assess linear relationships among the main electricity and weather variables. Monthly average patterns were examined to characterise seasonal behaviour.
+ 
+\subsection{Feature Engineering}
+ 
+Feature engineering was performed to provide the machine learning models with information about weather conditions, time-of-day effects, day-of-week patterns, and recent historical energy behaviour.
+ 
+Weather features were included directly from the merged dataset: solar irradiance (W/m\textsuperscript{2}), wind speed at 10 metres (m/s), and temperature at 2 metres (\textdegree C).
+ 
+Time-based features were extracted from the timestamp: hour of day, day of week, month, and day of year. These features were included because electricity demand and renewable generation follow strong diurnal and seasonal cycles that are not captured by weather variables alone.
+ 
+Lag features were constructed from past values of the time series. Shortfall lags were created at one hour, 24 hours, and 168 hours, corresponding to the previous hour, previous day, and previous week respectively. Additional 24-hour lag features were created for electricity load, wind generation, and solar generation. These lag windows were selected because energy systems exhibit strong autocorrelation at hourly, daily, and weekly intervals driven by human activity patterns and weekly demand cycles. Rows containing missing values introduced by lagging were removed before model training.
+ 
+\subsection{Train-Test Split}
+ 
+A chronological train-test split was applied because the data is a time series and future observations must not be used to train the model. The training set contained all observations from January 1, 2012 to December 31, 2019, and the test set contained observations from January 1, 2020 to December 31, 2020. The year 2020 was selected as the test period because it represents the most recent complete year in the dataset, providing the most current evaluation of model generalisation. Random splitting was not used as it would allow information from future timestamps to leak into model training.
+ 
+\subsection{Model Development}
+ 
+Four forecasting configurations were developed and compared to determine the most suitable approach for predicting renewable energy shortfall.
+ 
+\textit{1) Random Forest with Lag Features:} A Random Forest model was first trained using the full engineered feature set, incorporating weather variables, time-based features, and all lag features. This configuration was designed to test whether access to recent historical shortfall and generation values improved forecasting accuracy over the baseline.
+ 
+\textit{2) Random Forest Without Lag Features:} A second Random Forest regression model was trained using only weather variables and time-based features, excluding all lag features. This configuration served as a baseline to assess the predictive contribution of weather and temporal information alone, without access to recent historical shortfall values. Random Forest was selected for its ability to model nonlinear relationships, its robustness to irrelevant features, and its interpretability through feature importance scores.
+ 
+\textit{3) Prophet:} A Prophet model was developed because it is specifically designed for time-series forecasting and handles seasonality and trend decomposition explicitly. The model was configured with daily, weekly, and yearly seasonal components. The three averaged weather variables were included as external regressors. Prophet was selected as a complement to Random Forest because it operates on the raw time series directly without requiring manual feature engineering, making it a strong candidate for capturing long-term structural patterns.
+ 
+\textit{4) NeuralProphet:} A NeuralProphet model was developed as an extension of the Prophet framework. NeuralProphet replaces the traditional decomposition components with a neural network architecture, combining an autoregressive module with learned seasonality components. The model was configured to use the previous 24 hours of shortfall history as autoregressive input, with daily, weekly, and yearly seasonality in multiplicative mode. The three weather variables were included as external regressors. NeuralProphet was selected because it retains the interpretable seasonal structure of Prophet while adding the capacity to learn nonlinear temporal dependencies, which are known to be significant in energy shortfall data.
+ 
+\subsection{Model Evaluation}
+ 
+All four models were evaluated over the same test period using three regression metrics: Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and the Coefficient of Determination (\(R^2\)). A consistent test period was used across all models to ensure that performance comparisons were not affected by differences in evaluation windows.
+ 
+\subsection{Battery Storage Optimisation}
+ 
+To assess the potential of energy storage to reduce renewable shortfall, a battery storage dispatch model was applied to the scenario forecasts. The battery model operated on daily aggregated data, where each daily observation represented the mean hourly load, renewable generation, shortfall, and surplus for that day.
+ 
+\textit{1) Battery Configurations:} Four battery storage configurations were modelled with capacities of 5~GWh, 10~GWh, 20~GWh, and 50~GWh. All configurations shared the following parameters: a round-trip efficiency of 87\%, a minimum state of charge of 20\%, a maximum state of charge of 100\%, and a capital cost of \$150 per MWh based on 2024 market rates. Power ratings were scaled proportionally with capacity, ranging from 1~GW charge/discharge for the 5~GWh configuration to 5~GW for the 50~GWh configuration. These four capacities were selected to span a realistic range from near-term deployable storage to large-scale strategic reserve, allowing storage effectiveness to be evaluated as a function of scale.
+ 
+\textit{2) Scenario Generation:} Three generation scenarios were constructed by applying fixed multipliers to the baseline daily wind and solar generation values. The worst-case scenario applied factors of 0.70 to wind and 0.65 to solar, representing the 10th percentile of generation conditions. The average-case scenario retained baseline values at 1.00$\times$. The best-case scenario applied factors of 1.30 to wind and 1.35 to solar, representing the 90th percentile. Demand was held constant across scenarios so that shortfall variation was driven entirely by generation-side changes. These multipliers were used to bound the range of expected storage performance under different renewable output conditions.
+ 
+\textit{3) Dispatch Algorithm:} A greedy dispatch algorithm was implemented to simulate battery operation at each daily timestep. During surplus periods, where renewable generation exceeded demand, the battery was charged up to its physical rate limit and remaining SOC headroom, with round-trip efficiency losses applied on the charging side. During shortfall periods, the battery discharged up to its rate limit and available stored energy to reduce unmet demand. SOC was bounded at each timestep between the minimum and maximum thresholds. The greedy approach was selected for its computational efficiency and its correspondence to simple rule-based dispatch strategies used in grid operations.
+ 
+\textit{4) Economic Analysis:} The economic viability of each battery configuration was assessed using CAPEX, annual operating expenditure (OPEX) at 2.5\% of CAPEX per year, and cost per MWh stored. An optimisation step identified the most cost-effective battery configuration per scenario, defined as the smallest configuration achieving at least 90\% shortfall reduction, evaluated by cost per percentage point of reduction.
+ 
+\textit{5) Outputs:} The battery storage analysis produced a consolidated summary file (\texttt{battery\_storage\_analysis.csv}) containing shortfall reduction, coverage percentage, average state of charge, and economic metrics for all configuration-scenario combinations. Individual dispatch records were saved for each combination (\texttt{dispatch\_*.csv}). An optimisation recommendation file (\texttt{battery\_recommendations.csv}) was also produced identifying the recommended battery size per scenario.
+
+
+\section{Results and Analysis}
+ 
+\subsection{Dataset Characteristics}
+ 
+The dataset consists of hourly electricity demand and renewable generation data for Germany from 2012 to 2020. The target variable, defined as the shortfall between electricity demand and renewable generation, exhibits strong temporal variability driven by both demand patterns and weather-dependent renewable output.
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig1_shortfall_timeseries.png}
+    \caption{Time series of renewable energy shortfall (2015--2020)}
+    \label{fig:shortfall_timeseries}
+\end{figure}
+ 
+As shown in Figure~\ref{fig:shortfall_timeseries}, the renewable energy shortfall from 2015 to 2020 exhibits significant temporal variability characterised by clear seasonal and daily cycles. Peak shortfall values, frequently reaching approximately 70{,}000~MW, are consistently observed during the winter months when electricity demand is highest and solar generation is at its seasonal minimum. The shortfall decreases during the summer months due to higher renewable yields, though a baseline deficit remains present throughout the year. The dense, high-frequency oscillations visible across the timeline reflect the inherent volatility of weather-dependent generation and daily demand spikes. These characteristics indicate that for an energy analytics platform to be effective, its forecasting models must be capable of capturing both long-term seasonal dependencies and the nonlinear, stochastic nature of short-term power fluctuations.
+ 
+\subsection{Model Performance Comparison}
+ 
+The forecasting models were evaluated using Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and Coefficient of Determination (\(R^2\)).
+ 
+\begin{table}[H]
+\centering
+\caption{Model Performance Comparison}
+\label{tab:model_performance}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{MAE (MW)} & \textbf{RMSE (MW)} & \textbf{\(R^2\)} \\
+\midrule
+Random Forest (with lag) & 1{,}129.29 & 1{,}494.50 & 0.9845 \\
+Random Forest (no lag)   & 5{,}173.30 & 6{,}598.63 & 0.6971 \\
+Prophet                  & 4{,}514.20 & 5{,}724.98 & 0.7720 \\
+NeuralProphet            & 1{,}029.01 & 1{,}328.29 & 0.9877 \\
+\bottomrule
+\end{tabular}
+\end{table}
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig2_rmse_comparison.png}
+    \caption{Comparison of model performance using RMSE}
+    \label{fig:rmse_comparison}
+\end{figure}
+ 
+The evaluation of the forecasting models, summarised in Table~\ref{tab:model_performance}, reveals a clear distinction between models that account for temporal dependencies and those that do not. NeuralProphet emerged as the top-performing model, achieving the lowest RMSE of 1{,}328.29~MW and a Coefficient of Determination (\(R^2\)) of 0.9877. This suggests that the hybrid approach of NeuralProphet, combining traditional time-series components with neural networks, is highly effective at capturing the complex, nonlinear patterns inherent in energy shortfall data.
+ 
+The importance of feature engineering is most evident when comparing the Random Forest variants. The inclusion of lag features significantly improved model accuracy, reducing the RMSE from 6{,}598.63~MW to 1{,}494.50~MW. This substantial performance gain confirms that historical information is a critical predictor for future demand-supply gaps. In contrast, the Prophet model showed moderate success (\(R^2 = 0.7720\)), but its higher error rates compared to the top-tier models indicate it struggled to fully account for the high-frequency volatility observed in the dataset. These results demonstrate that high-accuracy energy forecasting requires a framework capable of modelling both long-term seasonality and immediate temporal dependencies. NeuralProphet's advantage over Random Forest comes from its autoregressive structure (24 hours of historical shortfall), combined with weather regressors, whereas Random Forest treats each hour independently even with lag features.
+ 
+\subsection{Prediction Results}
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig3_neuralprophet_predicted_vs_actual.png}
+    \caption{NeuralProphet predicted vs.\ actual shortfall values}
+    \label{fig:np_predicted_actual}
+\end{figure}
+ 
+As shown in Figure~\ref{fig:np_predicted_actual}, the NeuralProphet model demonstrates exceptional precision in tracking the actual renewable energy shortfall over the entire evaluation period. The predicted values heavily overlap with the actual values, visually confirming the model's high fidelity in capturing both long-term seasonal trends and high-frequency daily fluctuations. The 10th to 90th percentile bands widened during winter peaks, reflecting higher forecast uncertainty during extreme events. The very slight deviations where the actual values peek through are primarily isolated to periods of extreme, rapid variation. These minor discrepancies likely stem from sudden, volatile shifts in weather conditions or instantaneous demand spikes that fall outside the model's learned historical patterns. Overall, the consistent alignment across both peak and trough periods validates the robustness and reliability of the model for real-time energy forecasting.
+ 
+\subsection{Scenario Analysis}
+ 
+To assess renewable energy shortfall under varying generation conditions, three scenarios were constructed and evaluated over the full dataset period of 2{,}101 days. The scenarios represent worst-case (10th percentile generation), average-case (baseline), and best-case (90th percentile generation) conditions. Demand was held constant across all scenarios at an average of 55{,}492~MW, so that shortfall variation was driven entirely by the generation side.
+ 
+\begin{table}[H]
+\centering
+\caption{Scenario Analysis Summary}
+\label{tab:scenario_summary}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Scenario} & \textbf{Avg Wind (MW)} & \textbf{Avg Solar (MW)} & \textbf{Coverage (\%)} & \textbf{Avg Shortfall (MW)} & \textbf{Max Shortfall (MW)} & \textbf{Days w/ Shortfall} \\
+\midrule
+Worst Case   & 8{,}088  & 2{,}964 & 19.9 & 44{,}441 & 66{,}038 & 2099/2101 \\
+Average Case & 11{,}554 & 4{,}560 & 29.0 & 39{,}379 & 65{,}496 & 2099/2101 \\
+Best Case    & 15{,}020 & 6{,}155 & 38.1 & 34{,}316 & 64{,}954 & 2094/2101 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig4_stacked_area_scenarios.png}
+    \caption{Stacked area chart of renewable generation and demand by scenario}
+    \label{fig:stacked_area}
+\end{figure}
+ 
+As seen in Table~\ref{tab:scenario_summary} and Figure~\ref{fig:stacked_area}, a significant power shortfall persisted on virtually every day ($>$ 99.6\% of the study period) across all three evaluated scenarios. Renewable coverage varied from 19.9\% in the worst-case scenario to 38.1\% in the best-case, highlighting that even substantial increases in wind and solar capacity do not eliminate the deficit. In the best-case scenario, while average renewable output rose to 21{,}175~MW, it still failed to meet the constant average demand of 55{,}492~MW, leaving a substantial mean shortfall of 34{,}316~MW.
+ 
+Notably, Figure~\ref{fig:stacked_area} illustrates that the maximum shortfall remains consistently above 64{,}000~MW in all cases. This indicates that peak demand periods often coincide with ``Dunkelflaute'' events, which are periods of low wind and solar output, where even high-percentile generation conditions provide little relief. These findings confirm that during the 2012--2020 period, renewable generation alone, even under optimal weather conditions, was insufficient to meet national demand. This underscores the critical necessity for long-duration energy storage and flexible backup generation to maintain grid stability during periods of high demand and low renewable availability.
+ 
+\subsection{Battery Storage Optimisation Results}
+ 
+The greedy dispatch battery storage model was applied to each of the three scenarios across four battery configurations.
+ 
+\begin{table}[H]
+\centering
+\caption{Battery Storage Shortfall Reduction by Scenario and Configuration}
+\label{tab:battery_results}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Scenario} & \textbf{Config (GWh)} & \textbf{Baseline (GWh)} & \textbf{Residual (GWh)} & \textbf{Reduction (\%)} & \textbf{CAPEX (M USD)} \\
+\midrule
+Worst   & 5  & 3{,}886.7 & 3{,}799.3 & 2.3  & \$0.75 \\
+Worst   & 10 & 3{,}886.7 & 3{,}711.8 & 4.5  & \$1.5  \\
+Worst   & 20 & 3{,}886.7 & 3{,}624.4 & 6.8  & \$3.0  \\
+Worst   & 50 & 3{,}886.7 & 3{,}449.4 & 11.3 & \$7.5  \\
+Average & 5  & 3{,}444.0 & 3{,}356.5 & 2.5  & \$0.75 \\
+Average & 10 & 3{,}444.0 & 3{,}269.1 & 5.1  & \$1.5  \\
+Average & 20 & 3{,}444.0 & 3{,}181.6 & 7.6  & \$3.0  \\
+Average & 50 & 3{,}444.0 & 3{,}006.7 & 12.7 & \$7.5  \\
+Best    & 5  & 3{,}001.2 & 2{,}914.2 & 2.9  & \$0.75 \\
+Best    & 10 & 3{,}001.2 & 2{,}827.3 & 5.8  & \$1.5  \\
+Best    & 20 & 3{,}001.2 & 2{,}740.6 & 8.7  & \$3.0  \\
+Best    & 50 & 3{,}001.2 & 2{,}568.1 & 14.4 & \$7.5  \\
+\bottomrule
+\end{tabular}}
+\end{table}
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig5_battery_comparison.png}
+    \caption{Battery storage shortfall reduction comparison across scenarios and configurations}
+    \label{fig:battery_comparison}
+\end{figure}
+ 
+As summarised in Table~\ref{tab:battery_results} and Figure~\ref{fig:battery_comparison}, the battery storage analysis reveals that while all configurations produced measurable reductions in residual shortfall, their impact was relatively modest compared to the total national energy deficit. The largest configuration tested (50~GWh) achieved a maximum shortfall reduction of 14.4\% under best-case generation conditions and 11.3\% in the worst-case. Crucially, no configuration reached a scale sufficient to fully cover a single day's shortfall. This reflects the fundamental magnitude gap between the tested storage capacities and Germany's national-level demand shortfalls, which averaged between 34{,}316~MW and 44{,}441~MW daily.
+ 
+Shortfall reduction scaled with high consistency across all scenarios. In the average-case scenario, doubling capacity from 5~GWh to 10~GWh effectively doubled the reduction percentage from 2.5\% to 5.1\%. This almost linear scaling suggests that the greedy dispatch algorithm successfully utilised the added capacity within the constraints of daily surplus and deficit patterns. The best-case scenario consistently yielded the highest performance, as increased renewable output provided more frequent surplus periods to recharge the system. From an economic perspective, with CAPEX scaling from \$0.75M to \$7.5M (\$150/MWh), these results indicate that while battery storage at these scales is an effective supplementary measure for peak shaving and grid balancing, it is not yet a primary solution for achieving full renewable energy autonomy at the national grid level.
+ 
+\subsection{Key Insights}
+ 
+Four key insights emerge from the combined forecasting and storage analysis.
+ 
+First, temporal dependencies are the dominant driver of forecasting accuracy. The 77\% RMSE reduction achieved by adding lag features to the Random Forest model, and the superior performance of NeuralProphet's autoregressive structure, both confirm that recent historical shortfall values carry more predictive information than any individual weather variable.
+ 
+Second, NeuralProphet outperforms all other models tested by combining time-series decomposition with neural network learning, achieving an \(R^2\) of 0.9877 on the unseen 2020 test year. This validates its selection as the primary forecasting engine for the platform.
+ 
+Third, renewable generation alone is structurally insufficient to meet Germany's electricity demand across the full 2012--2020 study period. Even under best-case generation conditions, renewables covered only 38.1\% of average demand, with a shortfall persisting on 2{,}094 of 2{,}101 days.
+ 
+Fourth, battery storage at the capacities modelled provides measurable but limited shortfall relief. The maximum reduction achieved was 14.4\% with a 50~GWh battery under best-case conditions. These findings highlight that grid-scale storage complements but cannot substitute for either expanded renewable capacity or conventional backup generation at the national level.
+ 
+\subsection{Limitations and Model Uncertainty}
+ 
+Several limitations apply to the findings presented. The forecasting models were trained on historical data from 2012 to 2019 and may not generalise well to conditions outside the range of the training period, including extreme weather events, sudden policy changes, or structural shifts in Germany's generation mix. Uncertainty quantification was partially addressed through NeuralProphet's percentile forecast bands, though a full probabilistic treatment of model uncertainty was not implemented.
+ 
+The scenario analysis applied fixed generation multipliers to historical baseline values rather than deriving scenarios from probabilistic forecasts, which represents a simplified approach to uncertainty modelling. The battery storage model operated on daily aggregated data rather than the hourly resolution used in forecasting, which may underestimate the short-term cycling demands placed on storage systems in real grid operation. Additionally, the battery configurations tested, up to 50~GWh, represent a small fraction of the storage capacity that would be required to materially resolve national-scale shortfall in Germany, and results should be interpreted within this context.
+
+
+
+\section{Conclusion}
+ 
+This study developed an energy analytics platform for forecasting renewable energy shortfall in Germany using historical electricity and weather data spanning 2012 to 2020. The platform integrated open-source electricity generation data from the Open Power System Data repository with weather observations retrieved from the NASA POWER API, and evaluated three forecasting approaches alongside a battery storage dispatch optimiser. The findings demonstrate that accurate shortfall forecasting is achievable at national grid scale, while also revealing the structural limitations of renewable generation and battery storage as they currently stand relative to Germany's electricity demand.
+ 
+\subsection{Key Findings}
+ 
+The forecasting results establish NeuralProphet as the most effective model for predicting renewable energy shortfall at hourly resolution. With an \(R^2\) of 0.9877 and an RMSE of 1{,}328.29~MW on the unseen 2020 test year, NeuralProphet outperformed all other configurations tested. Its advantage over the standard Prophet model, which achieved an \(R^2\) of 0.7720, demonstrates the practical value of incorporating autoregressive neural network components alongside traditional seasonality decomposition when dealing with the high-frequency volatility of energy shortfall data. The comparison between the two Random Forest variants further reinforced this finding, where the inclusion of lag features alone reduced RMSE by approximately 77\%, confirming that recent historical shortfall values are the most informative predictors available to any model operating on this data.
+ 
+The scenario analysis revealed that renewable generation covered between 19.9\% and 38.1\% of average national electricity demand across the worst-case and best-case generation scenarios respectively. A shortfall persisted on virtually every day of the study period under all three scenarios, with average daily shortfall ranging from 34{,}316~MW in the best case to 44{,}441~MW in the worst case. These findings indicate that even significant improvements in renewable output, represented here by a 30\% increase in wind and 35\% increase in solar generation, are insufficient to close the gap between renewable supply and national demand at Germany's current consumption levels. Conventional generation, cross-border imports, or transformative expansions in renewable capacity remain essential complements to any storage solution.
+ 
+The battery storage analysis confirmed that the greedy dispatch optimiser functioned as designed, consistently charging during surplus periods and discharging during shortfall periods within the physical and economic constraints modelled. However, the shortfall reductions achieved were modest relative to the scale of the problem. The largest configuration tested, 50~GWh, achieved a maximum shortfall reduction of 14.4\% under best-case generation conditions and 11.3\% under worst-case conditions, at a capital cost of \$7.5~million. No configuration achieved full coverage of any single day's shortfall across the worst or average scenarios, reflecting the fundamental mismatch between the storage capacities modelled and the magnitude of Germany's national demand gaps. These results should not be interpreted as a failure of the storage model but rather as an honest quantification of what battery storage at these scales can realistically contribute --- a meaningful supplementary buffer, not a standalone solution.
+ 
+\subsection{Limitations}
+ 
+The primary limitation of this study is the scale gap between the battery configurations modelled and the storage capacity that would be required to materially resolve national shortfall. The 50~GWh maximum capacity tested represents a fraction of what grid-scale storage would need to provide meaningful coverage at the demand levels observed. Future analyses should explore configurations in the hundreds of GWh range to better inform policy decisions. The battery dispatch simulation operated on daily aggregated data rather than the hourly resolution used in forecasting, which may underestimate the short-term cycling demands and efficiency losses that would occur in real grid operation. The scenario analysis applied fixed generation multipliers to historical baseline values rather than deriving scenarios from probabilistic model outputs, which represents a simplified treatment of generation uncertainty.
+ 
+\subsection{Future Work}
+ 
+Several extensions to this platform would strengthen both its analytical depth and practical applicability. First, the battery storage model should be re-implemented at hourly resolution to align with the forecasting pipeline and better capture intra-day cycling dynamics. Second, probabilistic scenario generation derived directly from the forecasting model's uncertainty bands would replace the fixed-multiplier approach with a more statistically grounded representation of generation variability. Third, expanding the platform beyond Germany to include other European countries with differing renewable mixes would allow the forecasting and storage frameworks to be validated across a broader range of grid conditions. Finally, incorporating electricity price data would enable the economic analysis to move beyond CAPEX estimation toward a full cost-benefit assessment of storage dispatch under real market conditions.
+ 
+The energy analytics platform developed in this study demonstrates that high-accuracy renewable energy shortfall forecasting is achievable using open data sources and accessible machine learning frameworks. The integration of weather data, temporal feature engineering, and neural network-enhanced time-series modelling produced a forecasting system capable of explaining over 98\% of shortfall variance on unseen data. While battery storage at the scales modelled provides limited relief against national-level shortfall, the combined platform offers a replicable foundation for energy planners and researchers seeking data-driven insights into the evolving balance between renewable supply and electricity demand.
+\section{Reflection on Process and Challenges}
+ 
+\subsection{Workflow and Contributions}
+ 
+The project was developed collaboratively across five members, with responsibilities divided by component. Data collection, cleaning, and exploratory data analysis were completed first as a shared foundation, ensuring all team members worked from the same merged dataset before model development began. Forecasting model development was carried out in the Jupyter notebook, where Prophet and NeuralProphet were implemented after the Random Forest baseline was established. Scenario generation and battery storage optimization were developed in parallel as separate scripts once the forecasting pipeline was stable. The interactive dashboard was the last to be built, drawing on the CSV outputs produced by the scenario and battery scripts. Documentation was produced continuously alongside development rather than at completion, with the README, dashboard guide, and scenario analysis guide written to reflect the pipeline as it existed at each stage.
+ 
+\subsection{Obstacles and How They Were Overcome}
+ 
+Many technical and conceptual challenges were encountered during this project.
+ 
+The first challenge was data integration, where merging hourly electricity data from OPSD with weather data from the NASA POWER API required careful timestamp alignment, as the two sources used different types of formatting. This was resolved by converting all timestamps to UTC datetime format before merging and applying an inner join to retain only hours present in both datasets, ensuring no timestamp misalignment transferred into the modelling stage.
+ 
+The second challenge was the introduction of missing values through lag feature engineering. Creating lag features at 1 hour, 24 hours and 168 hours introduced null values at the beginning of the time series, which would have caused errors during model training. This was resolved by dropping the affected rows after feature creation, accepting a small reduction in dataset size in exchange for a complete model ready dataset.
+ 
+The third challenge was NeuralProphet compatibility. NeuralProphet required time zone naive timestamps, while the merged dataset used time zone aware UTC formatting. This required an explicit conversion step before the model could be fitted, which was identified through a runtime error and resolved by applying timestamp localization removal prior to passing data to the model.
+ 
+The fourth challenge was validating the high \(R^2\) value produced by NeuralProphet. An \(R^2\) of 0.9877 on the test set raised concern about whether the model was producing degenerate or identical predictions rather than genuine forecasts. A dedicated sanity check cell was made to inspect the difference between predicted and actual values, confirm that predictions were not copies of the input and verify that the result was driven by the model's autoregressive structure and not data leakage.
+ 
+\subsection{Reflection on Model Selection}
+ 
+In retrospect, the inclusion of Random Forest as a forecasting model needed reflection. Random Forest is a general purposed regression algorithm that treats each observation independently, without any inherent understanding of temporal ordering or time series structure. While the addition of lag features partially compensated for this limitation by providing the model with recent historical context, Random Forest does not natively model trend, seasonality or autocorrelation in the way that time series specific models do. Its inclusion in this project was motivated by a desire to establish a performance baseline and to isolate the contribution of lag features through the with lag versus without lag comparison, both of which it served effectively. However, the core requirement of this project was to build a forecasting platform for renewable energy generation, a task for which Prophet and NeuralProphet are more appropriate tools. Prophet's explicit decomposition of trend, seasonality and holiday effects, and NeuralProphet's autoregressive neural network architecture, are both designed specifically for time series forecasting problems of this nature. If the project were to be repeated, Random Forest would be retained as a comparative baseline to demonstrate the value of temporal feature engineering, while the primary forecasting models presented for delivery of the platform would be Prophet and NeuralProphet exclusively. This distinction between a diagnostic baseline and a production forecasting component is an important one in applied data analytics, and one the group developed a clearer understanding of over the course of the project.
+ 
+ 
+\section{Code Quality}
+ 
+The code base was developed across five files with attention to organisation, readability, documentation, and computational efficiency throughout the full pipeline.
+ 
+\subsection{Organisation}
+ 
+The project code was structured as a modular pipeline in which each file was assigned a single, clearly defined responsibility. The main Jupyter notebook handled the complete machine learning pipeline of data loading, cleaning, exploratory data analysis, feature engineering, model training and evaluation. Scenario generation was handled separately in \texttt{generate\_scenarios.py}, battery storage dispatch and economic analysis in \texttt{battery\_storage\_model.py}, static chart production in \texttt{create\_visualizations.py}, and the interactive dashboard in \texttt{dashboard.py}. This separation of concerns ensured that each component could be developed, tested and modified independently without affecting the rest of the pipeline.
+ 
+Within the notebook, the analysis was divided into seven clearly labelled parts: data loading, exploratory data analysis, feature engineering, machine learning, model comparison, Prophet forecasting and NeuralProphet forecasting. Each part was introduced by a markdown heading, allowing the notebook to be navigated as a structured document rather than a flat sequence of code. The project root contained a corresponding set of documentation files: \texttt{README.md}, \texttt{DASHBOARD\_README.md}, and \texttt{SCENARIO\_ANALYSIS\_GUIDE.md}. Each scoped to a specific audience and component to avoid combining unrelated documentation into a single file.
+ 
+\subsection{Readability}
+ 
+Variable and column names were chosen to be descriptive and to communicate both meaning and units without requiring additional context. Raw OPSD column names were renamed to \texttt{load\_mw}, \texttt{wind\_generation\_mw}, and \texttt{solar\_generation\_mw} immediately after loading, and weather columns were renamed to include both the city name and the variable, for example \texttt{Berlin\_irradiance\_wm2}, before being averaged into national level variables. The target variable was named \texttt{shortfall\_mw} to precisely convey its definition and unit. Lag feature names embedded their temporal window directly, \texttt{lag\_1h\_shortfall}, \texttt{lag\_24h\_shortfall}, and \texttt{lag\_168h\_shortfall}, making the feature set describe itself without requiring a separate reference.
+ 
+In the battery storage model, physical parameters were encapsulated in a \texttt{BatteryConfig} dataclass with named fields including \texttt{capacity\_gwh}, \texttt{charge\_rate\_gw}, \texttt{round\_trip\_efficiency}, \texttt{min\_soc\_pct}, and \texttt{capex\_per\_mwh}. This design made each battery configuration readable as a structured specification rather than a positional argument list, reducing the likelihood of parameter misassignment when testing multiple configurations. The NeuralProphet model configuration used comments to annotate each parameter, for example \texttt{n\_lags=24 \# 24-hour AR window} and \texttt{n\_forecasts=1 \# one-step-ahead to match other models}, which made the modelling choices immediately interpretable without requiring cross reference to external documentation.
+ 
+\subsection{Documentation}
+ 
+Documentation was implemented at four levels across the project. At the project level, the \texttt{README.md} provided a complete overview including a quick start guide, key results tables, a full project structure listing all code and data files with descriptions, a data dictionary defining every column in both output CSV files with units and descriptions, a breakdown of the pipeline, a stack table, and a troubleshooting section. This level of documentation ensures the project is reproducible by someone with no prior knowledge of the code base.
+ 
+At the file level, \texttt{battery\_storage\_model.py} contained function level docstrings for its two core functions. The docstring for \texttt{calculate\_battery\_dispatch()} described the function's purpose, enumerated all input parameters with their types and expected columns and specified the return value. The docstring for \texttt{analyze\_battery\_impact()} similarly described its role in coordinating dispatch across multiple battery configurations and returning a structured results dictionary.
+ 
+At the section level, the notebook used 62 markdown cells across 111 total cells. These markdown cells served as running commentary, introducing each analytical step, explaining the rationale for decisions such as why lag features were included and why a chronological split was used and interpreting the outputs of each visualization and model evaluation directly beneath the relevant code cell.
+ 
+At the line level, comments were used in code cells to annotate non obvious logic, including the greedy dispatch decision rules, the NeuralProphet parameter choices, and the sanity check performed on the high \(R^2\) value to verify the model was not producing degenerate predictions.
+ 
+\subsection{Efficiency}
+ 
+Several efficiency measures were implemented to avoid redundant computation across the pipeline. In \texttt{generate\_scenarios.py}, a file existence check was performed before attempting to download the OPSD dataset, using \texttt{os.path.exists(csv\_file)} to skip the network request entirely if the data had already been retrieved and saved locally. This avoided repeated API calls during development and testing. All scenario forecasts and battery dispatch results were persisted to CSV files after their first computation, allowing the dashboard and any subsequent analysis to load pre-computed results rather than re-running the optimization on every execution.
+ 
+Within the notebook, data operations used Pandas vectorized methods throughout. Feature engineering was implemented using Pandas.dt accessors and .shift() operations applied directly to full columns rather than row by row iteration, which is critical for performance on a dataset of over 50 thousand hourly observations. The battery dispatch loop in \texttt{battery\_storage\_model.py} used NumPy's \texttt{np.clip()} to enforce state of charge bounds in a single operation at each timestep rather than branching conditionally, and used the \texttt{@dataclass} decorator to define battery parameters as a typed, structured object rather than passing individual arguments through function signatures. The dashboard loaded all required CSV files once at startup and served interactive updates from in-memory data, keeping interactive response time below one second as documented in the README performance notes.
+
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{alencar_wind_forecasting}
+D. de Alencar, C. Affonso, R. C\'elio, J. Laureano, J. C. Leite, and J. Carlos, ``Different models for forecasting wind power generation: Case study,'' \emph{Energies}, vol. 10, no. 12, p. 1976, 2017. [Online]. Available: \url{https://doi.org/10.3390/en10121976}
+
+\bibitem{bmwe_renewable_energy}
+Bundeswirtschaftsministerium, ``Renewable energy,'' \emph{BMWE}, 2017. [Online]. Available: \url{https://www.bundeswirtschaftsministerium.de/Redaktion/EN/Dossier/renewable-energy.html}
+
+\bibitem{chen_xu_china_data}
+Y. Chen and J. Xu, ``Solar and wind power data from the Chinese State Grid Renewable Energy Generation Forecasting Competition,'' \emph{Scientific Data}, vol. 9, no. 1, 2022. [Online]. Available: \url{https://doi.org/10.1038/s41597-022-01696-6}
+
+\bibitem{chugh_metrics}
+A. Chugh, ``MAE, MSE, RMSE, coefficient of determination, adjusted R squared --- which metric is better?'' \emph{Analytics Vidhya}, Dec. 8, 2020. [Online]. Available: \url{https://medium.com/analytics-vidhya/mae-mse-rmse-coefficient-of-determination-adjusted-r-squared-which-metric-is-better-cd0326a5697e}
+
+\bibitem{chugh_prophet}
+V. Chugh, ``Facebook Prophet: A modern approach to time series forecasting,'' \emph{DataCamp}, Nov. 5, 2025. [Online]. Available: \url{https://www.datacamp.com/tutorial/facebook-prophet}
+
+\bibitem{dwd_climate}
+Deutscher Wetterdienst, ``Climate monitoring -- Germany: Annual overview of temperature, precipitation and sunshine duration of Germany,'' \emph{Deutscher Wetterdienst}, 2025. [Online]. Available: \url{https://www.dwd.de/EN/climate_environment/climatemonitoring/germany/brdmap_ubr_text_aktl_jz.html}
+
+\bibitem{hu_wind_energy}
+S. Hu, ``Wind energy,'' \emph{NRDC}, Apr. 8, 2024. [Online]. Available: \url{https://www.nrdc.org/stories/wind-energy}
+
+\bibitem{islam_forecasting_resources}
+M. K. Islam, N. M. S. Hassan, M. G. Rasul, K. Emami, and A. A. Chowdhury, ``Forecasting of solar and wind resources for power generation,'' \emph{Energies}, vol. 16, no. 17, p. 6247, 2023. [Online]. Available: \url{https://doi.org/10.3390/en16176247}
+
+\bibitem{kadampur_solar_case}
+M. A. B. Kadampur, ``Solar energy data analysis \& predictive modeling: A case study on open data of Saudi Arabian solar energy,'' Jul. 2024. [Online]. Available: \url{https://doi.org/10.20944/preprints202407.1971.v1}
+
+\bibitem{kavlakoglu_random_forest}
+E. Kavlakoglu, ``Random forest,'' \emph{IBM}, Oct. 20, 2021. [Online]. Available: \url{https://www.ibm.com/think/topics/random-forest}
+
+\bibitem{nasa_power}
+NASA POWER, ``NASA POWER,'' \emph{Prediction of Worldwide Energy Resources (POWER)}, 2026. [Online]. Available: \url{https://power.larc.nasa.gov/}
+
+\bibitem{prema_review_forecast}
+V. Prema, M. S. Bhaskar, D. Almakhles, N. Gowtham, and K. U. Rao, ``Critical review of data, models and performance metrics for wind and solar power forecast,'' \emph{IEEE Access}, 2021. [Online]. Available: \url{https://doi.org/10.1109/ACCESS.2021.3137419}
+
+\bibitem{prophet_docs}
+Prophet, ``Prophet,'' 2023. [Online]. Available: \url{https://facebook.github.io/prophet/}
+
+\bibitem{owid_energy}
+H. Ritchie, P. Rosado, and M. Roser, ``Energy production and consumption,'' \emph{Our World in Data}, Jul. 10, 2020. [Online]. Available: \url{https://ourworldindata.org/energy-production-consumption}
+
+\bibitem{twidell_weir}
+J. Twidell and T. Weir, \emph{Renewable Energy Resources}. London, U.K. and New York, NY, USA: Routledge, Taylor \& Francis Group, 2015.
+
+\bibitem{usdoe_solar}
+U.S. Department of Energy, ``How does solar work?'' \emph{Energy.gov}, Apr. 17, 2026. [Online]. Available: \url{https://www.energy.gov/cmei/systems/how-does-solar-work}
+
+\end{thebibliography}
+\appendix
+\section*{AI Tools Used}
+The AI agents Claude Opus, Chat GPT and Co-Pilot were used in the process of creating the project, during skeletal code development, debugging and proof-reading. 
+\end{document}
