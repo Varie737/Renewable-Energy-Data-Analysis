@@ -32,14 +32,14 @@ daily_df['date'] = pd.to_datetime(daily_df['date'])
 
 print(f"  [OK] Loaded {len(scenarios_df)} scenario records across 3 scenarios")
 
-# Color scheme (consistent with notebook theme)
+# Color scheme for stronger data contrast
 colors = {
-    'worst': '#e08adf',      # light orchid
-    'average': '#c06bb7',    # pink-purple
-    'best': '#9b59b6',       # purple
-    'demand': '#7a4d7e',     # dark purple
-    'wind': '#d16ba5',       # rosy pink
-    'solar': '#7b68ee',      # soft violet
+    'worst': '#8c564b',      # brown
+    'average': '#17becf',    # cyan
+    'best': '#9467bd',       # purple
+    'demand': '#d62728',     # red
+    'wind': '#1f77b4',       # blue
+    'solar': '#ffbf00',      # golden yellow
 }
 
 background_color = '#faf6fb'
@@ -268,9 +268,9 @@ for i in range(len(summary_df.columns)):
 
 # Style the rows with scenario colors
 scenario_colors_map = {
-    0: '#e08adf',  # worst (light orchid)
-    1: '#c06bb7',  # average (pink-purple)
-    2: '#9b59b6',  # best (purple)
+    0: '#8c564b',  # worst (brown)
+    1: '#17becf',  # average (cyan)
+    2: '#9467bd',  # best (purple)
 }
 
 for i in range(len(summary_df)):

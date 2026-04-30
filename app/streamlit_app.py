@@ -20,7 +20,7 @@ from neuralprophet import NeuralProphet
 
 
 # Colors
-COLOR_SOLAR = "#FFA500"  # orange
+COLOR_SOLAR = "#FFD700"  # yellow
 COLOR_WIND = "#1f77b4"   # blue
 COLOR_DEMAND = "#d62728" # red
 COLOR_SHORTFALL = "#9467bd" # purple

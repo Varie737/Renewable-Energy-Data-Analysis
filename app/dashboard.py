@@ -39,10 +39,10 @@ app = dash.Dash(
 )
 
 # Color scheme (matching existing visualizations)
-COLOR_WORST = '#e08adf'      # Light orchid
-COLOR_AVERAGE = '#c06bb7'    # Pink-purple
-COLOR_BEST = '#9b59b6'       # Purple
-COLOR_DEMAND = '#e74c3c'     # Red
+COLOR_WORST = '#8c564b'      # Brown
+COLOR_AVERAGE = '#17becf'    # Cyan
+COLOR_BEST = '#9467bd'       # Purple
+COLOR_DEMAND = '#d62728'     # Red
 COLOR_BG = '#faf6fb'         # Light background
 
 SCENARIO_COLORS = {
