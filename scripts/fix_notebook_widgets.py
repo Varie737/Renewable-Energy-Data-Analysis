@@ -13,3 +13,4 @@ def fix_notebook(path):
 if __name__ == "__main__":
     for notebook in sys.argv[1:]:
         fix_notebook(notebook)
+print (f"Fixed notebook widgets in {len(sys.argv) - 1} notebooks")
