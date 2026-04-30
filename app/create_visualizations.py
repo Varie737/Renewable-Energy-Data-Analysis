@@ -10,7 +10,7 @@ import matplotlib.patches as mpatches
 from matplotlib.dates import DateFormatter
 import seaborn as sns
 from datetime import datetime, timedelta
-import os
+from pathlib import Path
 
 print("=" * 80)
 print("PHASE 2: CREATING ENGAGING SCENARIO VISUALIZATIONS")
@@ -20,15 +20,17 @@ print("=" * 80)
 # LOAD DATA
 # ==============================================================================
 print("\n[1/6] Loading scenario data...")
-scenarios_df = pd.read_csv('scenario_forecasts.csv')
-daily_df = pd.read_csv('daily_data.csv')
+project_root = Path(__file__).resolve().parents[1]
+processed_dir = project_root / 'data' / 'processed'
+visualizations_dir = project_root / 'visualizations'
+visualizations_dir.mkdir(parents=True, exist_ok=True)
+
+scenarios_df = pd.read_csv(processed_dir / 'scenario_forecasts.csv')
+daily_df = pd.read_csv(processed_dir / 'daily_data.csv')
 scenarios_df['date'] = pd.to_datetime(scenarios_df['date'])
 daily_df['date'] = pd.to_datetime(daily_df['date'])
 
 print(f"  [OK] Loaded {len(scenarios_df)} scenario records across 3 scenarios")
-
-# Create output directory
-os.makedirs('visualizations', exist_ok=True)
 
 # Color scheme (consistent with notebook theme)
 colors = {
@@ -84,8 +86,8 @@ for idx, (ax, scenario) in enumerate(zip(axes, scenarios_list)):
         spine.set_edgecolor(edge_color)
 
 plt.tight_layout()
-plt.savefig('visualizations/01_stacked_area_scenarios.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/01_stacked_area_scenarios.png")
+plt.savefig(visualizations_dir / '01_stacked_area_scenarios.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '01_stacked_area_scenarios.png'}")
 plt.close()
 
 # ==============================================================================
@@ -128,8 +130,8 @@ for spine in ax.spines.values():
     spine.set_linewidth(1.5)
 
 plt.tight_layout()
-plt.savefig('visualizations/02_line_chart_uncertainty_band.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/02_line_chart_uncertainty_band.png")
+plt.savefig(visualizations_dir / '02_line_chart_uncertainty_band.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '02_line_chart_uncertainty_band.png'}")
 plt.close()
 
 # ==============================================================================
@@ -173,8 +175,8 @@ for idx, scenario in enumerate(scenarios_list):
 
 axes[-1].set_xlabel('Date', fontsize=11, fontweight='bold', color=edge_color)
 plt.tight_layout()
-plt.savefig('visualizations/03_small_multiples_shortfall.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/03_small_multiples_shortfall.png")
+plt.savefig(visualizations_dir / '03_small_multiples_shortfall.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '03_small_multiples_shortfall.png'}")
 plt.close()
 
 # ==============================================================================
@@ -216,8 +218,8 @@ ax.set_xticklabels(month_labels, rotation=0)
 ax.tick_params(colors=edge_color)
 
 plt.tight_layout()
-plt.savefig('visualizations/04_shortfall_heatmap.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/04_shortfall_heatmap.png")
+plt.savefig(visualizations_dir / '04_shortfall_heatmap.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '04_shortfall_heatmap.png'}")
 plt.close()
 
 # ==============================================================================
@@ -277,13 +279,13 @@ for i in range(len(summary_df)):
 
 plt.title('Scenario Comparison: Key Metrics', 
          fontsize=14, fontweight='bold', color='#7a4d7e', pad=20)
-plt.savefig('visualizations/05_scenario_summary_table.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/05_scenario_summary_table.png")
+plt.savefig(visualizations_dir / '05_scenario_summary_table.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '05_scenario_summary_table.png'}")
 plt.close()
 
 # Save summary table as CSV too
-summary_df.to_csv('visualizations/scenario_summary_table.csv', index=False)
-print("  [OK] Saved: visualizations/scenario_summary_table.csv")
+summary_df.to_csv(visualizations_dir / 'scenario_summary_table.csv', index=False)
+print(f"  [OK] Saved: {visualizations_dir / 'scenario_summary_table.csv'}")
 
 # ==============================================================================
 # VISUALIZATION 6: RENEWABLE vs DEMAND COMPARISON DASHBOARD
@@ -338,8 +340,8 @@ plt.suptitle('Renewable Energy Forecasting: 3-Scenario Analysis\n' +
              'Comparing Solar + Wind Generation Against Electricity Demand',
              fontsize=15, fontweight='bold', color=edge_color, y=0.995)
 
-plt.savefig('visualizations/06_dashboard_comparison.png', dpi=300, bbox_inches='tight')
-print("  [OK] Saved: visualizations/06_dashboard_comparison.png")
+plt.savefig(visualizations_dir / '06_dashboard_comparison.png', dpi=300, bbox_inches='tight')
+print(f"  [OK] Saved: {visualizations_dir / '06_dashboard_comparison.png'}")
 plt.close()
 
 print("\n" + "=" * 80)
@@ -352,4 +354,4 @@ print("  3. 03_small_multiples_shortfall.png - 3-panel shortfall comparison")
 print("  4. 04_shortfall_heatmap.png - Monthly shortfall severity heatmap")
 print("  5. 05_scenario_summary_table.png - Summary metrics table")
 print("  6. 06_dashboard_comparison.png - Dashboard with monthly trends")
-print("\nAll files saved to: visualizations/")
+print(f"\nAll files saved to: {visualizations_dir}")

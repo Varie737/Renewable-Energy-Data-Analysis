@@ -4,7 +4,7 @@ Streamlit dashboard for Renewable Energy Data Analysis
 Run:
     streamlit run streamlit_app.py
 
-This app expects the CSV 'germany_energy_weather_2012_2020.csv' to be in the same folder as this script.
+This app expects the CSV 'germany_energy_weather_2012_2020.csv' to be located in data/raw.
 It processes the dataframe, computes generation totals, identifies shortfall periods, and provides
 interactive Plotly charts with a date-range filter and a deviation-from-mean filter.
 """
@@ -31,7 +31,7 @@ def load_data(csv_file_path: str = None) -> pd.DataFrame:
     """Load CSV into a DataFrame. CSV is expected to contain utc_timestamp, load_mw,
     solar_generation_mw, wind_generation_mw (or similar names)."""
     if csv_file_path is None:
-        csv_file_path = Path(__file__).resolve().parent / "germany_energy_weather_2012_2020.csv"
+        csv_file_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "germany_energy_weather_2012_2020.csv"
     dataframe = pd.read_csv(csv_file_path)
     if dataframe.empty:
         raise ValueError(f"Loaded CSV is empty: {csv_file_path}")
@@ -205,12 +205,12 @@ def format_large_number(x: float) -> str:
 def load_models():
     """Load all trained models and feature information."""
     try:
-        # Use current working directory as fallback
-        models_dir = Path(__file__).resolve().parent / "models"
+        # Use src/models in the project root
+        models_dir = Path(__file__).resolve().parents[1] / "src" / "models"
         
         # If that doesn't exist, try from cwd
         if not models_dir.exists():
-            models_dir = Path.cwd() / "models"
+            models_dir = Path.cwd() / "src" / "models"
         
         if not models_dir.exists():
             st.error(f"Models directory not found at: {models_dir}")
