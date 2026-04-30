@@ -31,7 +31,8 @@ battery_analysis_df = pd.read_csv('battery_storage_analysis.csv')
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
+    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
+    suppress_callback_exceptions=True
 )
 
 # Color scheme (matching existing visualizations)
@@ -749,9 +750,9 @@ def update_battery_comparison(scenario):
 
 @callback(
     Output('metrics-table-container', 'children'),
-    []
+    [Input('url', 'pathname')]
 )
-def update_metrics_table():
+def update_metrics_table(pathname):
     """Create comprehensive metrics table."""
     metrics = []
     for scenario in ['worst', 'average', 'best']:
@@ -776,9 +777,9 @@ def update_metrics_table():
 
 @callback(
     Output('seasonal-patterns-chart', 'figure'),
-    []
+    [Input('url', 'pathname')]
 )
-def update_seasonal_patterns():
+def update_seasonal_patterns(pathname):
     """Plot seasonal patterns by scenario."""
     scenarios_df['month'] = pd.to_datetime(scenarios_df['date']).dt.month
     
@@ -811,9 +812,9 @@ def update_seasonal_patterns():
 
 @callback(
     Output('coverage-distribution-chart', 'figure'),
-    []
+    [Input('url', 'pathname')]
 )
-def update_coverage_distribution():
+def update_coverage_distribution(pathname):
     """Plot coverage distribution."""
     fig = go.Figure()
     
@@ -840,9 +841,9 @@ def update_coverage_distribution():
 
 @callback(
     Output('battery-economics-chart', 'figure'),
-    []
+    [Input('url', 'pathname')]
 )
-def update_battery_economics():
+def update_battery_economics(pathname):
     """Compare battery economics across scenarios."""
     fig = go.Figure()
     
