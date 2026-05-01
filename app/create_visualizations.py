@@ -22,11 +22,12 @@ print("=" * 80)
 print("\n[1/6] Loading scenario data...")
 project_root = Path(__file__).resolve().parents[1]
 processed_dir = project_root / 'data' / 'processed'
+raw_dir = project_root / 'data' / 'raw'
 visualizations_dir = project_root / 'visualizations'
 visualizations_dir.mkdir(parents=True, exist_ok=True)
 
 scenarios_df = pd.read_csv(processed_dir / 'scenario_forecasts.csv')
-daily_df = pd.read_csv(processed_dir / 'daily_data.csv')
+daily_df = pd.read_csv(raw_dir / 'daily_data.csv')
 scenarios_df['date'] = pd.to_datetime(scenarios_df['date'])
 daily_df['date'] = pd.to_datetime(daily_df['date'])
 
